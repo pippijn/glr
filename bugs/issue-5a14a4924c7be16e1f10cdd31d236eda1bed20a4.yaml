@@ -1,0 +1,24 @@
+--- !ditz.rubyforge.org,2008-03-06/issue 
+title: Command line parsing for parsgen
+desc: |-
+  Add command line argument (Arg module) parsing to parsgen, so it no longer
+  needs to hard-code the grammar file names.
+type: :task
+component: glr
+release: 
+reporter: Pippijn van Steenhoven <pippijn@xinutec.org>
+status: :closed
+disposition: :fixed
+creation_time: 2012-10-09 02:09:32.462684 Z
+references: []
+
+id: 5a14a4924c7be16e1f10cdd31d236eda1bed20a4
+log_events: 
+- - 2012-10-09 02:09:33.631896 Z
+  - Pippijn van Steenhoven <pippijn@xinutec.org>
+  - created
+  - ""
+- - 2012-10-14 14:19:41.616893 Z
+  - Pippijn van Steenhoven <pippijn@xinutec.org>
+  - closed with disposition fixed
+  - command line interface is defined in the Options module

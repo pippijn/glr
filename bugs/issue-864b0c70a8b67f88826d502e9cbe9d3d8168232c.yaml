@@ -1,0 +1,25 @@
+--- !ditz.rubyforge.org,2008-03-06/issue 
+title: Improve performance of LR item set construction
+desc: |-
+  On my machine, the LR item set construction takes around 0.5 seconds. This is
+  too long. A complete menhir run on the same grammar, including table
+  construction, takes 0.7 seconds (bison runs in 0.3 seconds). I believe that
+  our algorithm performs redundant computations, but my understanding is
+  currently too limited to recognise opportunities for optimisation.
+type: :task
+component: glr
+release: 
+reporter: Pippijn van Steenhoven <pippijn@xinutec.org>
+status: :unstarted
+disposition: 
+creation_time: 2012-10-19 15:42:44.844655 Z
+references: []
+
+id: 864b0c70a8b67f88826d502e9cbe9d3d8168232c
+log_events: 
+- - 2012-10-19 15:44:28.359281 Z
+  - Pippijn van Steenhoven <pippijn@xinutec.org>
+  - created
+  - |-
+    Profiling suggests that move_dot_no_closure takes most time and that
+    comparing symbols (GrammarUtil.equal_symbol) is the most called function.

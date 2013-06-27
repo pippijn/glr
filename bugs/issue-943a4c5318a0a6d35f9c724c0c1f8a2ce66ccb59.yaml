@@ -1,0 +1,20 @@
+--- !ditz.rubyforge.org,2008-03-06/issue 
+title: Make parsgen more robust
+desc: |-
+  Find more errors in grammar specifications and give proper diagnostics about
+  them.
+type: :task
+component: glr
+release: 
+reporter: Pippijn van Steenhoven <pippijn@xinutec.org>
+status: :unstarted
+disposition: 
+creation_time: 2012-10-08 19:56:54.188920 Z
+references: []
+
+id: 943a4c5318a0a6d35f9c724c0c1f8a2ce66ccb59
+log_events: 
+- - 2012-10-08 19:56:55.377233 Z
+  - Pippijn van Steenhoven <pippijn@xinutec.org>
+  - created
+  - ""

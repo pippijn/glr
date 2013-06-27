@@ -1,0 +1,24 @@
+--- !ditz.rubyforge.org,2008-03-06/issue 
+title: Sample input is not minimal
+desc: |-
+  SampleInput.left_context does not return a minimal context.
+  
+  E.g. State 4 should have left context:
+    TranslationUnit __typeof__ ( TOK_INT_LITERAL
+  but currently it has:
+    TranslationUnit CFuncModifier_no_inline CFuncModifierSeq Declarator { CompoundStmtHelper TOK_INT_LITERAL
+type: :bugfix
+component: glr
+release: 
+reporter: Pippijn van Steenhoven <pippijn@xinutec.org>
+status: :unstarted
+disposition: 
+creation_time: 2012-10-19 15:51:03.009214 Z
+references: []
+
+id: 95a5f553a97fb8f7dbdaaa146b7f705b22f232ce
+log_events: 
+- - 2012-10-19 15:51:04.333429 Z
+  - Pippijn van Steenhoven <pippijn@xinutec.org>
+  - created
+  - ""

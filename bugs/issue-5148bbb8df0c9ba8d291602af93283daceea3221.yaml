@@ -1,0 +1,29 @@
+--- !ditz.rubyforge.org,2008-03-06/issue 
+title: Implement back-transformation to GrammarAst
+desc: |-
+  Currently, the transformation AST -> GrammarType/AnalysisEnvType is one-way.
+  Implement a back-transformation so we can review transformations done on these
+  representations.
+type: :feature
+component: glr
+release: 
+reporter: Pippijn van Steenhoven <pippijn@xinutec.org>
+status: :in_progress
+disposition: 
+creation_time: 2012-10-20 10:10:08.350219 Z
+references: []
+
+id: 5148bbb8df0c9ba8d291602af93283daceea3221
+log_events: 
+- - 2012-10-20 10:10:09.742482 Z
+  - Pippijn van Steenhoven <pippijn@xinutec.org>
+  - created
+  - ""
+- - 2012-10-21 09:56:14.822465 Z
+  - Pippijn van Steenhoven <pippijn@xinutec.org>
+  - changed status from unstarted to in_progress
+  - Verbatims, options, decls, types, precs are done. Nonterminals are TODO.
+- - 2012-10-21 10:27:40.719837 Z
+  - Pippijn van Steenhoven <pippijn@xinutec.org>
+  - commented
+  - "Nonterminals are now also printed. TODO: spec funcs of terms, %prec, %forbid, subsets"

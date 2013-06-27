@@ -1,0 +1,24 @@
+--- !ditz.rubyforge.org,2008-03-06/issue 
+title: Track source locations in parsgen
+desc: |-
+  Keep track of source locations in grammar files, especially for user action
+  code blocks, so we can emit "#line"-directives in the resulting %Actions.ml.
+type: :feature
+component: glr
+release: 
+reporter: Pippijn van Steenhoven <pippijn@xinutec.org>
+status: :closed
+disposition: :fixed
+creation_time: 2012-10-08 19:48:31.602252 Z
+references: []
+
+id: 672d8d8f0c71881fa02d4fdcf0581659c486684b
+log_events: 
+- - 2012-10-08 19:48:36.013030 Z
+  - Pippijn van Steenhoven <pippijn@xinutec.org>
+  - created
+  - ""
+- - 2012-10-19 15:22:50.178649 Z
+  - Pippijn van Steenhoven <pippijn@xinutec.org>
+  - closed with disposition fixed
+  - source locations are now automatically tracked and passed to semantic actions as start_p and end_p

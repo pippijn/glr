@@ -1,0 +1,33 @@
+--- !ditz.rubyforge.org,2008-03-06/issue 
+title: Integrate treematch with elkhound
+desc: |-
+  Elkhound (gramanl) should produce a treematch AST instead of a Caml AST
+  directly. Treematch will then emit the Ptree that is now produced by
+  EmitPtree.
+type: :task
+component: glr
+release: 
+reporter: Pippijn van Steenhoven <pippijn@xinutec.org>
+status: :in_progress
+disposition: 
+creation_time: 2012-10-19 15:25:56.116487 Z
+references: []
+
+id: 0bc11be5680a9abc974aacfd89a9bf6b45dc5750
+log_events: 
+- - 2012-10-19 15:25:58.599587 Z
+  - Pippijn van Steenhoven <pippijn@xinutec.org>
+  - created
+  - ""
+- - 2012-10-20 14:58:18.259117 Z
+  - Wojciech Meyer <wojciech.meyer@gmail.com>
+  - changed status from unstarted to in_progress
+  - ""
+- - 2012-10-20 14:58:26.711123 Z
+  - Wojciech Meyer <wojciech.meyer@gmail.com>
+  - changed status from in_progress to paused
+  - ""
+- - 2012-10-21 06:28:22.224848 Z
+  - Pippijn van Steenhoven <pippijn@xinutec.org>
+  - changed status from paused to in_progress
+  - "Initial version complete: generating input for treematch -special"

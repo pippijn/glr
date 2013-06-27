@@ -1,0 +1,22 @@
+--- !ditz.rubyforge.org,2008-03-06/issue 
+title: Perform grammar inlining
+desc: |-
+  Gramanl should inline all nonterminals with a single production. In addition
+  to that, it may heuristically inline others:
+   - nonterminals used only once
+   - option-nonterminals will require duplication of its clients
+type: :feature
+component: glr
+release: 
+reporter: Pippijn van Steenhoven <pippijn@xinutec.org>
+status: :unstarted
+disposition: 
+creation_time: 2012-10-19 16:00:33.277018 Z
+references: []
+
+id: 46eedd448928f02b4169e545b1690d3011b3255e
+log_events: 
+- - 2012-10-19 16:01:24.241977 Z
+  - Pippijn van Steenhoven <pippijn@xinutec.org>
+  - created
+  - Directly recursive nonterminals can never be inlined.

@@ -1,0 +1,22 @@
+--- !ditz.rubyforge.org,2008-03-06/issue 
+title: Move elkhound's -module-prefix into the grammar file
+desc: |-
+  All options that affect the generated parser should live inside the grammar
+  description. Currently, the module prefix ("Cc" for the C++ parser) is
+  specified on the command line. This should be moved into the grammar file as
+  to not use globals.
+type: :bugfix
+component: glr
+release: 
+reporter: Pippijn van Steenhoven <pippijn@xinutec.org>
+status: :unstarted
+disposition: 
+creation_time: 2012-10-20 05:19:54.167157 Z
+references: []
+
+id: fedbe488eaf8bb3b0f3304e377f6de6a519c489a
+log_events: 
+- - 2012-10-20 05:19:54.920091 Z
+  - Pippijn van Steenhoven <pippijn@xinutec.org>
+  - created
+  - ""

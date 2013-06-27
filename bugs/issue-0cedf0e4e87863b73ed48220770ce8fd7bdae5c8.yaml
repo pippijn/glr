@@ -1,0 +1,21 @@
+--- !ditz.rubyforge.org,2008-03-06/issue 
+title: Improve diagnostics from parsgen
+desc: |-
+  Design and implement an error message infrastructure and use it to improve
+  diagnostics emitted by parsgen. Currently, it does not include source
+  locations and often no or very little information on the failure cause.
+type: :feature
+component: glr
+release: 
+reporter: Pippijn van Steenhoven <pippijn@xinutec.org>
+status: :unstarted
+disposition: 
+creation_time: 2012-10-08 19:55:04.066619 Z
+references: []
+
+id: 0cedf0e4e87863b73ed48220770ce8fd7bdae5c8
+log_events: 
+- - 2012-10-08 19:55:07.905012 Z
+  - Pippijn van Steenhoven <pippijn@xinutec.org>
+  - created
+  - ""

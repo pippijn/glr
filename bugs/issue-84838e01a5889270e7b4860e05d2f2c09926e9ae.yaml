@@ -1,0 +1,35 @@
+--- !ditz.rubyforge.org,2008-03-06/issue 
+title: Detect and remove unreachable parse tree nodes
+desc: |-
+  In some cases, a nonterminal is used only for syntax, but its contents are
+  irrelevant. In these cases, the parse tree node is unreachable from the root
+  node. Instead of uselessly creating and immediately dropping a parse tree
+  node, we should return unit.
+  
+  EmitPtree: For this, we need to construct an AST representation on a higher
+  level than the Caml AST we currently produce. A subsequent pass over this AST
+  can remove unreachable types.
+  
+  PtreeMaker: The module creating parse tree actions may need to know about
+  unreachable types, as well.
+type: :task
+component: glr
+release: 
+reporter: Pippijn van Steenhoven <pippijn@xinutec.org>
+status: :closed
+disposition: :fixed
+creation_time: 2012-10-20 07:52:09.248059 Z
+references: []
+
+id: 84838e01a5889270e7b4860e05d2f2c09926e9ae
+log_events: 
+- - 2012-10-20 07:52:10.328535 Z
+  - Pippijn van Steenhoven <pippijn@xinutec.org>
+  - created
+  - ""
+- - 2012-10-21 06:29:37.252772 Z
+  - Pippijn van Steenhoven <pippijn@xinutec.org>
+  - closed with disposition fixed
+  - |-
+    Unreachable parse tree nodes are now no longer emitted and the semantic
+    actions yield unit.

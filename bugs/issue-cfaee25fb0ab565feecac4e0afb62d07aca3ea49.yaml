@@ -1,0 +1,20 @@
+--- !ditz.rubyforge.org,2008-03-06/issue 
+title: Allow for multiple start nonterminals
+desc: |-
+  Menhir allows for an arbitrary number of start nonterminals with different
+  types. We can implement this using a sum type over these different types.
+type: :feature
+component: glr
+release: 
+reporter: Pippijn van Steenhoven <pippijn@xinutec.org>
+status: :unstarted
+disposition: 
+creation_time: 2012-10-20 10:12:59.826960 Z
+references: []
+
+id: cfaee25fb0ab565feecac4e0afb62d07aca3ea49
+log_events: 
+- - 2012-10-20 10:13:00.309002 Z
+  - Pippijn van Steenhoven <pippijn@xinutec.org>
+  - created
+  - ""

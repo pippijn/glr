@@ -1,0 +1,22 @@
+--- !ditz.rubyforge.org,2008-03-06/issue 
+title: CST needs to be annotated with locations
+desc: We don't have location information inside CST
+type: :feature
+component: glr
+release: 
+reporter: Wojciech Meyer <wojciech.meyer@gmail.com>
+status: :closed
+disposition: :fixed
+creation_time: 2012-10-12 23:36:58.351131 Z
+references: []
+
+id: 09dea1f14245a1b5ec64f4fa8fd477cb5493ec78
+log_events: 
+- - 2012-10-12 23:36:59.999080 Z
+  - Wojciech Meyer <wojciech.meyer@gmail.com>
+  - created
+  - ""
+- - 2012-10-19 15:23:31.251718 Z
+  - Pippijn van Steenhoven <pippijn@xinutec.org>
+  - closed with disposition fixed
+  - generated Ptree now contains source locations (start and end)
