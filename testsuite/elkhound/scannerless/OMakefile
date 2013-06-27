@@ -1,0 +1,12 @@
+# Target
+Target		= sless
+Description	= Scannerless parser
+Version		= 0.1
+
+# Sources
+Modules[] =
+	Sless
+	SlessLexer
+
+elkhound-parser (sless)
+ocaml-program ()

@@ -1,0 +1,12 @@
+# Target
+Target		= elkhound
+
+# Sources
+Modules[] =
+	Elkhound
+
+# Library dependencies
+Requires[] =
+	gramanl
+
+ocaml-program ()

@@ -1,0 +1,12 @@
+# Target
+Target		= arith
+Description	= Arith parser
+Version		= 0.1
+
+# Sources
+Modules[] =
+	Arith
+	ArithLexer
+
+elkhound-parser (arith)
+ocaml-program ()

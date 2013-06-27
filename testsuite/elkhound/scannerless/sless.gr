@@ -1,0 +1,131 @@
+(* example of scannerless operation in Elkhound *)
+
+terminals {
+    0: CHAR_EOF;
+   10: CHAR_NEWLINE;
+   32: CHAR_SPACE;
+   40: CHAR_LPAREN       "(";
+   41: CHAR_RPAREN       ")";
+   43: CHAR_PLUS         "+";
+   97: A                 "a";
+   98: B                 "b";
+   99: C                 "c";
+  100: D                 "d";
+  101: E                 "e";
+  102: F                 "f";
+  103: G                 "g";
+  104: H                 "h";
+  105: I                 "i";
+  106: J                 "j";
+  107: K                 "k";
+  108: L                 "l";
+  109: M                 "m";
+  110: N                 "n";
+  111: O                 "o";
+  112: P                 "p";
+  113: Q                 "q";
+  114: R                 "r";
+  115: S                 "s";
+  116: T                 "t";
+  117: U                 "u";
+  118: V                 "v";
+  119: W                 "w";
+  120: X                 "x";
+  121: Y                 "y";
+  122: Z                 "z";
+}
+
+nonterm(unit) Prog {
+  -> empty [None] { }
+  -> p:Prog id:IDENT [Ident] { }
+  -> p:Prog IF cond:Prog FI [If] { }
+  -> p:Prog LPAREN e:Expr RPAREN [Parens] { }
+}
+
+nonterm Expr {
+  -> p:Prog [Simple] { }
+  -> e:Expr op:Operator p:Prog [Expr] { }
+}
+
+nonterm Operator {
+  -> PLUS [Plus] { }
+}
+
+nonterm Ident {
+  fun maximal() {}          (* use maximal munch disambiguation *)
+
+  -> "a" [A] { }
+  -> "b" [B] { }
+  -> "c" [C] { }
+  -> "d" [D] { }
+  -> "e" [E] { }
+  -> "f" [F] { }
+  -> "g" [G] { }
+  -> "h" [H] { }
+  -> "i" [I] { }
+  -> "j" [J] { }
+  -> "k" [K] { }
+  -> "l" [L] { }
+  -> "m" [M] { }
+  -> "n" [N] { }
+  -> "o" [O] { }
+  -> "p" [P] { }
+  -> "q" [Q] { }
+  -> "r" [R] { }
+  -> "s" [S] { }
+  -> "t" [T] { }
+  -> "u" [U] { }
+  -> "v" [V] { }
+  -> "w" [W] { }
+  -> "x" [X] { }
+  -> "y" [Y] { }
+  -> "z" [Z] { }
+
+  -> "a" n:Ident [A_];
+  -> "b" n:Ident [B_];
+  -> "c" n:Ident [C_];
+  -> "d" n:Ident [D_];
+  -> "e" n:Ident [E_];
+  -> "f" n:Ident [F_];
+  -> "g" n:Ident [G_];
+  -> "h" n:Ident [H_];
+  -> "i" n:Ident [I_];
+  -> "j" n:Ident [J_];
+  -> "k" n:Ident [K_];
+  -> "l" n:Ident [L_];
+  -> "m" n:Ident [M_];
+  -> "n" n:Ident [N_];
+  -> "o" n:Ident [O_];
+  -> "p" n:Ident [P_];
+  -> "q" n:Ident [Q_];
+  -> "r" n:Ident [R_];
+  -> "s" n:Ident [S_];
+  -> "t" n:Ident [T_];
+  -> "u" n:Ident [U_];
+  -> "v" n:Ident [V_];
+  -> "w" n:Ident [W_];
+  -> "x" n:Ident [X_];
+  -> "y" n:Ident [Y_];
+  -> "z" n:Ident [Z_];
+
+  subsets If, Fi;           (* prefer keywords to identifiers *)
+}
+
+(* keywords *)
+nonterm If -> "i" "f" { }
+nonterm Fi -> "f" "i" { }
+
+(* tokens, with whitespace following *)
+nonterm IDENT -> i:Ident WS { }
+nonterm IF -> If WS { }
+nonterm FI -> Fi WS { }
+nonterm LPAREN -> "(" WS { }
+nonterm RPAREN -> ")" WS { }
+nonterm PLUS -> "+" WS { }
+
+(* whitespace *)
+nonterm WS {
+  -> empty { }
+  -> CHAR_SPACE WS { }
+  -> CHAR_NEWLINE WS { }
+}
