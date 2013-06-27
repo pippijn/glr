@@ -1,4 +1,4 @@
-glr
+GLR
 ===
 
-GLR parser generator for OCaml based on Elkhound
+GLR parser generator for OCaml based on Elkhound.
