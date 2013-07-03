@@ -5,7 +5,7 @@ let rec compute_follow first_of follow_of set_follow_of derivable prods =
   (* for each production *)
   ProdArray.iter (fun prod ->
     (* for each RHS nonterminal member *)
-    ExtList.iterl (fun after_right_sym right_sym ->
+    CoreList.iterl (fun after_right_sym right_sym ->
       match right_sym with
       | Terminal _ -> ()
 

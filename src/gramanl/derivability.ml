@@ -128,7 +128,7 @@ let add_derivable_relations index derivable changes =
     | right ->
         (* iterate over RHS symbols, seeing if the LHS can derive that
          * RHS symbol (by itself) *)
-        ignore (ExtList.fold_leftl (fun derives after_right_sym right_sym ->
+        ignore (CoreList.fold_leftl (fun derives after_right_sym right_sym ->
           derives &&
             match right_sym with
             | Terminal _ ->

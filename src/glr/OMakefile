@@ -1,26 +1,26 @@
 # Target
-Target		= glr
+Name		= glr
 Description	= Generalised LR parsing engine
 Version		= 0.1
 
 # Sources
 Modules[] =
-	Arraystack
-	Easy
-	Engine
-	Lexerint
-	Objpool
-	Options
-	PtreeActions
-	PtreeNode
-	SemanticValue
-	SourceLocation
-	TokenInfo
-	UserActions
+  Arraystack
+  Easy
+  Engine
+  Lexerint
+  Objpool
+  Options
+  PtreeActions
+  PtreeNode
+  SemanticValue
+  SourceLocation
+  TokenInfo
+  UserActions
 
 # Library dependencies
-Requires[] =
-	baselib
-	parsetables
+OCaml-Requires[] =
+  baselib
+  parsetables
 
-ocaml-pack ()
+ocaml-pack-install (.DEFAULT)

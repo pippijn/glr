@@ -81,7 +81,7 @@ let set_transition from_set sym to_set =
  ************************************************************)
 
 let has_extending_shift prods nonterms item_set nonterm term =
-  ExtList.exists_many (fun item ->
+  CoreList.exists_many (fun item ->
     LrItem.is_extending_shift prods nonterms item nonterm term
   ) [item_set.kernel_items.items; item_set.nonkernel_items]
 

@@ -1,12 +1,12 @@
 # Target
-Target		= elkhound
+Name		= elkhound
 
 # Sources
 Modules[] =
-	Elkhound
+  Elkhound
 
 # Library dependencies
-Requires[] =
-	gramanl
+OCaml-Requires[] =
+  gramanl
 
-ocaml-program ()
+program-install (.DEFAULT)

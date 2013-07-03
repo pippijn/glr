@@ -128,7 +128,7 @@ let compute_dprod_first derivable dotted_prods index =
       let dprod = DenseIntMap.get dprods posn in
       assert (ProdArray.get index.prods dprod.prod == prod);
 
-      let right = ExtList.nth_tl prod.right posn in
+      let right = CoreList.nth_tl prod.right posn in
 
       (* compute its first *)
       let first_of_rhs = first_of_sequence derivable first_of right in

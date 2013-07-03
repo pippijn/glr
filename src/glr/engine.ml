@@ -1520,7 +1520,7 @@ let makePath maxRhsLen () = {
 
 
 let computeMaxRhsLen tables =
-  ExtInt.fold_left (fun len i ->
+  CoreInt.fold_left (fun len i ->
     max len (ParseTables.getProdInfo_rhsLen tables i)
   ) 0 0 (ParseTables.getNumProds tables - 1)
 

@@ -47,7 +47,7 @@ let compare_rewrite seen prods p1 p2 =
   let p2 = ProdArray.get prods p2 in
 
   let order =
-    ExtList.foldl_until (fun prod_index ->
+    CoreList.foldl_until (fun prod_index ->
       let prod = ProdArray.get prods prod_index in
 
       let a = if GrammarUtil.rhs_has_nonterm p1 prod.left then 1 else 0 in
@@ -102,7 +102,7 @@ let rec rewrite_nt_as_terminals nonterms prods prods_by_lhs output nonterm seen 
   (* try each in turn until one succeeds; this effectively uses
    * backtracking when one fails *)
   let success =
-    ExtList.foldl_until (fun prod_index ->
+    CoreList.foldl_until (fun prod_index ->
       let prod = ProdArray.get prods prod_index in
       try
         (* now, the chosen rule provides a RHS, which is a sequence of

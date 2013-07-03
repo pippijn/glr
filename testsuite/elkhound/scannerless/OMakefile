@@ -1,5 +1,5 @@
 # Target
-Target		= sless
+Name		= sless
 Description	= Scannerless parser
 Version		= 0.1
 
@@ -9,4 +9,4 @@ Modules[] =
 	SlessLexer
 
 elkhound-parser (sless)
-ocaml-program ()
+program-install (.DEFAULT)
