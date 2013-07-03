@@ -4,7 +4,7 @@
 
 TestFramework.(run "testsuite" [
   {
-    tool = "arith";
+    tool = "arith.native";
     suffixes = [".c"];
     options = None;
     dirs = [
@@ -12,7 +12,7 @@ TestFramework.(run "testsuite" [
     ];
   };
   {
-    tool = "sless";
+    tool = "sless.native";
     suffixes = [".c"];
     options = None;
     dirs = [
