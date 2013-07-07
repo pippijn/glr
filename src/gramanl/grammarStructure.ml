@@ -1,6 +1,5 @@
+open CorePervasives
 open GrammarType
-
-let (|>) = BatPervasives.(|>)
 
 type t = {
   gram_index		: GrammarType.index;

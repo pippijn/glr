@@ -1,7 +1,6 @@
+open CorePervasives
 open AnalysisEnvType
 open GrammarType
-
-let (|>) = BatPervasives.(|>)
 
 
 (************************************************************

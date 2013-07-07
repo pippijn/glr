@@ -1,6 +1,5 @@
+open CorePervasives
 open AnalysisEnvType
-
-let (|>) = BatPervasives.(|>)
 
 
 (* yield the left-context as a sequence of symbols *)

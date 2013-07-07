@@ -1,6 +1,6 @@
+open CorePervasives
 open Camlp4.PreCast
 
-let (|>) = BatPervasives.(|>)
 let ghost = Sloc.ghost "emitTables"
 
 

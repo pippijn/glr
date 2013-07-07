@@ -1,7 +1,7 @@
+open CorePervasives
 open Camlp4.PreCast
 open PtreeType
 
-let (|>) = BatPervasives.(|>)
 let ghost = Sloc.ghost "emitPtree"
 
 

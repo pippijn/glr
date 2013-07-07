@@ -1,10 +1,8 @@
+open CorePervasives
 open GrammarAst
 open GrammarType
 open Merge
 open Camlp4.PreCast
-
-let (|>) = BatPervasives.(|>)
-
 
 
 let start_name = Sloc.generated "__EarlyStartSymbol"

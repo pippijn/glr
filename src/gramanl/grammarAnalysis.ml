@@ -1,7 +1,6 @@
+open CorePervasives
 open GrammarType
 open AnalysisEnvType
-
-let (|>) = BatPervasives.(|>)
 
 
 let compute_reachable env =

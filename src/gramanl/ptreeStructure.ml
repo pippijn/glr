@@ -1,8 +1,8 @@
+open CorePervasives
 open Camlp4.PreCast
 open GrammarType
 open PtreeType
 
-let (|>) = BatPervasives.(|>)
 let _loc = Loc.ghost
 
 

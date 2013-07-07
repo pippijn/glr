@@ -1,7 +1,7 @@
+open CorePervasives
 open GrammarType
 open Camlp4.PreCast
 
-let (|>) = BatPervasives.(|>)
 let ghost = Sloc.ghost "ptreeMaker"
 
 

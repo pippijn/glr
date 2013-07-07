@@ -1,7 +1,7 @@
+open CorePervasives
 open Camlp4.PreCast
 open GrammarType
 
-let (|>) = BatPervasives.(|>)
 let ghost = Sloc.ghost "emitNames"
 
 

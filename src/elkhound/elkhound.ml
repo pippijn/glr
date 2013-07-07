@@ -1,6 +1,5 @@
+open CorePervasives
 open Gramanl
-
-let (|>) = BatPervasives.(|>)
 
 
 let print_ast topforms =

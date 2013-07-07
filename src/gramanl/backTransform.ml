@@ -1,8 +1,7 @@
+open CorePervasives
 open GrammarAst
 open GrammarType
 open GrammarStructure
-
-let (|>) = BatPervasives.(|>)
 
 
 (* This module implements a transformation from AnalysisEnvType types to
