@@ -1493,7 +1493,7 @@ let parse (glr : 'result glr) lexer : 'result =
   try
 
     (* this loop never returns normally *)
-    Valgrind.Callgrind.instrumented
+    (*Valgrind.Callgrind.instrumented*)
       (* get first token and start parsing *)
       (main_loop glr lexer) Lexerint.(lexer.token ())
 

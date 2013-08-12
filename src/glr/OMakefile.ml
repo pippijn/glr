@@ -22,7 +22,7 @@ install Package ".DEFAULT" [
 
   (* Library dependencies *)
   OCamlRequires [
-    "baselib";
+    "corelib";
     "parsetables";
   ];
 ]

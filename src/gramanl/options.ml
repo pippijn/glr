@@ -18,7 +18,7 @@ let _output_menhir		= ref true
 let _gen_table_text		= ref false
 let _use_table_dump		= ref true
 let _inline_table_dump		= ref true
-let _compress_table_dump	= ref true
+let _compress_table_dump	= ref false
 
 let _optimise			= ref false
 
