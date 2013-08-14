@@ -2,6 +2,7 @@
 
 A GLR parser generator written in OCaml. It is based on ideas from Elkhound and
 features automatic typed abstract syntax tree generation, type inference, a
-L<../treematch> backend, a Menhir/C<ocamlyacc> backend and is constantly evolving.
+L<treematch|../treematch> backend, a Menhir/C<ocamlyacc> backend and is
+constantly evolving.
 
 L<Git repository|https://github.com/pippijn/glr>
