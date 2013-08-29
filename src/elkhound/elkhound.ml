@@ -1,4 +1,5 @@
 open CorePervasives
+
 open Gramanl
 
 
@@ -74,7 +75,7 @@ let print_transformed dirname gram =
     SemanticVariant.iter (fun variant ->
       let file = dirname ^ "/grammar.gr" in
       let ast = BackTransform.ast_of_gram gram variant in
-      BatStd.with_dispose ~dispose:close_out
+      BatPervasives.with_dispose ~dispose:close_out
         (fun out -> PrintAst.print ~out ast) (open_out file);
     );
   gram
@@ -104,7 +105,7 @@ let state_graph dirname (_, states, _ as tuple) =
 
 
 let dump_automaton dirname (env, states, _ as tuple) =
-  BatStd.with_dispose ~dispose:close_out
+  BatPervasives.with_dispose ~dispose:close_out
     (fun out ->
       Timing.progress "dumping states to automaton.out"
         (List.iter (PrintAnalysisEnv.print_item_set env out)) states

@@ -38,7 +38,7 @@ let emit_treematch name ptree =
   let out = name ^ "Treematch.tm" in
   let impl = EmitTreematch.make_ml_treematch ptree in
 
-  BatStd.with_dispose ~dispose:close_out
+  BatPervasives.with_dispose ~dispose:close_out
     (fun out -> output_string out impl) (open_out out)
 
 
@@ -85,7 +85,7 @@ let emit_tables name tables =
   let dat = name ^ "Tables.dat" in
 
   let intf, impl =
-    BatStd.with_dispose ~dispose:close_out
+    BatPervasives.with_dispose ~dispose:close_out
       (EmitTables.make_ml_tables tables) (open_out_bin dat)
   in
 
@@ -93,7 +93,7 @@ let emit_tables name tables =
 
   match impl with
   | None ->
-      BatStd.with_dispose ~dispose:close_out
+      BatPervasives.with_dispose ~dispose:close_out
         (TablePrinting.print_tables tables) (open_out out)
 
   | Some impl ->
