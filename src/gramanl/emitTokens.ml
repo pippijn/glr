@@ -64,7 +64,7 @@ let make_ml_tokens terms =
   let intf =
     let _loc = ghost 66 in
     <:sig_item<
-      type t = $types$
+      type t = | $types$
       include Glr.TokenInfo.S with type t := t
     >>
   in
@@ -109,7 +109,7 @@ let make_ml_tokens terms =
   let impl =
     let _loc = ghost 110 in
     <:str_item<
-      type t = $types$
+      type t = | $types$
       let name = $name_fn$
       let desc = $desc_fn$
       let index = $index_fn$
