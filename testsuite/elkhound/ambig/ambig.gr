@@ -1,0 +1,30 @@
+option shift_reduce_conflicts 16;
+
+impl_verbatim {
+  open AmbigAst
+}
+
+terminals {
+   0 : TOK_EOF;
+   1 : TOK_NUMBER;
+   2 : TOK_PLUS		"+";
+   3 : TOK_MINUS	"-";
+   4 : TOK_TIMES	"*";
+   5 : TOK_DIVIDE	"/";
+   6 : TOK_LPAREN	"(";
+   7 : TOK_RPAREN	")";
+  
+  token(int) TOK_NUMBER;
+}
+
+
+nonterm(AmbigAst.t) Exp {
+  fun merge (a, b) { Merge (a, b) }
+
+  -> e1:Exp "+" e2:Exp		[Add] { Add (e1, e2) }
+  -> e1:Exp "-" e2:Exp		[Sub] { Sub (e1, e2) }
+  -> e1:Exp "*" e2:Exp		[Mul] { Mul (e1, e2) }
+  -> e1:Exp "/" e2:Exp		[Div] { Div (e1, e2) }
+  -> n:TOK_NUMBER		[Num] { Num n }
+  -> "(" e:Exp ")"		[Exp] { e }
+}
