@@ -39,10 +39,12 @@ terminals {
    6 : TOK_LPAREN	"(";
    7 : TOK_RPAREN	")";
    8 : TOK_EQUALS	"=";
-   9 : TOK_IF		"if";
-  10 : TOK_THEN		"then";
-  11 : TOK_ELSE		"else";
-  12 : TOK_END		"end";
+   9 : TOK_OROR		"||";
+  10 : TOK_ANDAND	"&&";
+  11 : TOK_IF		"if";
+  12 : TOK_THEN		"then";
+  13 : TOK_ELSE		"else";
+  14 : TOK_END		"end";
   
   (* syntax: Some terminals have useful semantic values, and those
    * are declared here. *)
@@ -54,9 +56,11 @@ terminals {
    * new tokens anywhere in the precedence ladder. *)
   precedence {
     (* high precedence *)
-    left 20 "*" "/";
-    left 10 "+" "-";
-    left  5 "=";
+    left 50 "*" "/";
+    left 40 "+" "-";
+    left 30 "&&";
+    left 20 "||";
+    left 10 "=";
     (* low precedence *)
   }
 }
@@ -104,11 +108,13 @@ nonterm(int) Exp {
   -> e1:Exp "/" e2:Exp		[Div] { e1 / e2 }
   -> n:TOK_NUMBER		[Int] { n }
   -> p:ParenthesizedExp		[Exp] { p }
-  -> "if" c:ConditionalExp "then" e1:Exp "else" e2:Exp "end" [If] { if c then e1 else e2 }
+  -> "if" c:BooleanExp "then" e1:Exp "else" e2:Exp "end" [If] { if c then e1 else e2 }
 }
 
-nonterm(bool) ConditionalExp {
+nonterm(bool) BooleanExp {
   -> e1:Exp "=" e2:Exp		[Eq]  { e1 = e2 }
+  -> e1:BooleanExp "||" e2:BooleanExp		[Or]  { e1 || e2 }
+  -> e1:BooleanExp "&&" e2:BooleanExp		[And]  { e1 && e2 }
 }
 
 (* I've separated this rule out into its own nonterminal just to

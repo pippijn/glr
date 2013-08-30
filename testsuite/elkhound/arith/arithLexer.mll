@@ -14,6 +14,8 @@ rule token = parse
 | "/"			{ TOK_DIVIDE }
 | "("			{ TOK_LPAREN }
 | ")"			{ TOK_RPAREN }
+| "||"			{ TOK_OROR }
+| "&&"			{ TOK_ANDAND }
 | "="			{ TOK_EQUALS }
 | "if"			{ TOK_IF }
 | "then"		{ TOK_THEN }
