@@ -6,7 +6,21 @@ install Library ".DEFAULT" [
 
   (* Sources *)
   Modules [
+    "Lexerint";
+    "Liststack";
     "ParseTables";
     "ParseTablesType";
+    "PtreeActions";
+    "PtreeNode";
+    "PtreeOptions";
+    "SemanticValue";
+    "SourceLocation";
+    "TokenInfo";
+    "UserActions";
+  ];
+
+  (* Library dependencies *)
+  OCamlRequires [
+    "corelib";
   ];
 ]

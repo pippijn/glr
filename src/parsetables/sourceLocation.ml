@@ -2,7 +2,9 @@ open Lexing
 
 type t = position * position
 
-let t_of_sexp sx = dummy_pos, dummy_pos
+let dummy = dummy_pos, dummy_pos
+
+let t_of_sexp sx = dummy
 let sexp_of_t (s, e) = Sexplib.Sexp.Atom (
   Printf.sprintf "%d:%d-%d:%d"
     s.pos_lnum

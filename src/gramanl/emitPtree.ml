@@ -90,7 +90,6 @@ let make_ml_parse_tree ptree =
     let _loc, first_module = Sloc._loc first_module in
     <:str_item<
       open Sexplib.Conv
-      open Glr
 
       module Ptree = struct
         $modules$

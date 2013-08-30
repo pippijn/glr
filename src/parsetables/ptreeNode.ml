@@ -2,10 +2,10 @@
 
 
 (* a node in a parse tree *)
-type t = {            
+type t = {
   (* symbol at this node *)
-  symbol : string;          
-  
+  symbol : string;
+
   (* array of children *)
   children : t array;
 
@@ -54,18 +54,18 @@ let add_alternative self alt =
 
 
 let cyclicSkip self indentation out path =
-  if Options._ptree_cycles () then (
+  if PtreeOptions._ptree_cycles () then (
     (* does 'self' appear in 'path'? *)
-    let idx = Arraystack.index self path in
+    let idx = Liststack.index self path in
     if idx >= 0 then (
       (* yes; print a cyclicity reference *)
       indent out indentation;
       Printf.bprintf out "[CYCLIC: refers to %d hops up]\n"
-                          (Arraystack.length path - idx + 1);
+                          (Liststack.length path - idx + 1);
       true   (* return *)
     ) else (
       (* no; add myself to the path *)
-      Arraystack.push self path;
+      Liststack.push self path;
       false
     )
   ) else (
@@ -88,12 +88,12 @@ let print_merged self indentation symbol =
         symbol    (* no spaces, use whole thing *)
   in
 
-  indentation + Options._ptree_indent (), lhs, alts
+  indentation + PtreeOptions._ptree_indent (), lhs, alts
 
 
 let print_alt self indentation out expand alts lhs ct node =
   if alts > 1 then (
-    indent out (indentation - Options._ptree_indent ());
+    indent out (indentation - PtreeOptions._ptree_indent ());
     Printf.bprintf out "------------- ambiguous %s: %d of %d ------------\n"
                         lhs ct alts
   );
@@ -119,9 +119,9 @@ let print_alt self indentation out expand alts lhs ct node =
 
 
 let print_tree self out expand =
-  (* for detecting cyclicity *)      
-  let path = Arraystack.create () in
-  
+  (* for detecting cyclicity *)
+  let path = Liststack.create () in
+
   let rec innerPrint self indentation =
     if not (cyclicSkip self indentation out path) then (
       let indentation, lhs, alts =
@@ -138,7 +138,7 @@ let print_tree self out expand =
 
         (* iterate over children and print them *)
         Array.iter (fun c ->
-          innerPrint c (indentation + Options._ptree_indent ())
+          innerPrint c (indentation + PtreeOptions._ptree_indent ())
         ) node.children;
 
         ct + 1
@@ -146,13 +146,13 @@ let print_tree self out expand =
 
       if alts > 1 then (
         (* close up ambiguity display *)
-        indent out (indentation - Options._ptree_indent ());
+        indent out (indentation - PtreeOptions._ptree_indent ());
         Printf.bprintf out "----------- end of ambiguous %s -----------\n" lhs
       );
-      
-      if Options._ptree_cycles () then
+
+      if PtreeOptions._ptree_cycles () then
         (* remove myself from the path *)
-        ignore (Arraystack.pop path)
+        ignore (Liststack.pop path)
     );
   in
 

@@ -11,6 +11,11 @@ install Program ".DEFAULT" [
     "AmbigLexer";
   ];
 
+  (* Library dependencies *)
+  OCamlRequires [
+    "glr";
+  ];
+
   Flags [
     "ambigAst.ml",	"-syntax camlp4o";
   ];

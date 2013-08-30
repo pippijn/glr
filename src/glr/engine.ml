@@ -117,29 +117,24 @@ let noisyFailedParse = true
 (* We define our own versions of these exceptions, so that user code raising
  * the ones in Pervasives will not interfere with parser internals. *)
 exception End_of_file
-exception Cancel of string
 
 (* These exceptions are part of the public interface. *)
 exception ParseError of ParseTables.state_id * (*token*)ParseTables.term_index
 exception Located of SourceLocation.t * exn * string
 
 
-let cancel reason =
-  print_endline ("cancel: " ^ reason);
-  raise (Cancel reason)
-
 let keep_cancel () =
-  cancel "keep() returned false"
+  UserActions.cancel "keep() returned false"
 
 
 (* ------------------ accounting statistics ----------------- *)
 type statistics = {
-  mutable numStackNodesAllocd : int;
-  mutable maxStackNodesAllocd : int;
-  mutable detShift : int;
-  mutable detReduce : int;
-  mutable nondetShift : int;
-  mutable nondetReduce : int;
+  mutable numStackNodesAllocd	: int;
+  mutable maxStackNodesAllocd	: int;
+  mutable detShift		: int;
+  mutable detReduce		: int;
+  mutable nondetShift		: int;
+  mutable nondetReduce		: int;
 }
 
 
@@ -250,7 +245,7 @@ type 'result glr = {
 }
 
 
-let stats_of_glr glr =
+let stats glr =
   glr.stats
 
 
@@ -945,7 +940,7 @@ let rec rwlRecursiveProcess glr tokType start_p path =
         ignore (rwlEnqueueReductions glr parsr action newLink)
       ) glr.active_parsers
 
-  with Cancel reason ->
+  with UserActions.Cancel reason ->
     (* cancelled; drop on floor *)
     ()
   end;
@@ -1252,7 +1247,7 @@ let rec lrParseToken glr tokType tokSval tokSloc =
               (showNontermValue glr.userAct lhsIndex sval);
 
           sval
-        with Cancel reason ->
+        with UserActions.Cancel reason ->
           parse_error ~reason glr tokType tokSloc newState
       in
 

@@ -10,5 +10,10 @@ install Program ".DEFAULT" [
     "SlessLexer";
   ];
 
+  (* Library dependencies *)
+  OCamlRequires [
+    "glr";
+  ];
+
   Parser (Elkhound, "sless");
 ]

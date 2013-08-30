@@ -65,7 +65,7 @@ let make_ml_tokens terms =
     let _loc = ghost 66 in
     <:sig_item<
       type t = | $types$
-      include Glr.TokenInfo.S with type t := t
+      include TokenInfo.S with type t := t
     >>
   in
 
@@ -102,8 +102,8 @@ let make_ml_tokens terms =
       let _loc, _ = Sloc._loc term.tbase.name in
       match Semantic.semtype_of_term SemanticVariant.User term with
       | None   -> raise Exit
-      | Some _ -> <:expr<Glr.SemanticValue.repr sval>>
-    ) terms ~default:<:match_case<tok -> Glr.SemanticValue.null>>
+      | Some _ -> <:expr<SemanticValue.repr sval>>
+    ) terms ~default:<:match_case<tok -> SemanticValue.null>>
   in
 
   let impl =

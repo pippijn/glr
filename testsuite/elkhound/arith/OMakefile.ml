@@ -10,5 +10,10 @@ install Program ".DEFAULT" [
     "ArithLexer";
   ];
 
+  (* Library dependencies *)
+  OCamlRequires [
+    "glr";
+  ];
+
   Parser (Elkhound, "arith");
 ]

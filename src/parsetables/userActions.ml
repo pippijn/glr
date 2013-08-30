@@ -174,3 +174,10 @@ module type S = sig
   type result
   val userActions : result t
 end
+
+
+exception Cancel of string
+
+let cancel reason =
+  print_endline ("cancel: " ^ reason);
+  raise (Cancel reason)

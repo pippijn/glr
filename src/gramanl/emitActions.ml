@@ -74,14 +74,14 @@ let make_ml_actions variant index =
 	if semtype = polytype then
 	  <:binding<
 	    $lid:tag$ : $semtype$ =
-	      (Glr.SemanticValue.obj svals.($`int:rhs_index$))
+	      (SemanticValue.obj svals.($`int:rhs_index$))
 	  >>
 	else
 	  <:binding<
 	    (* explicitly state polymorphic type variable so the typing
 	     * stays sound even when users specify types *)
 	    $lid:tag$ : $semtype$ =
-	      (Glr.SemanticValue.obj svals.($`int:rhs_index$) : $polytype$)
+	      (SemanticValue.obj svals.($`int:rhs_index$) : $polytype$)
 	  >>
       in
 
@@ -140,7 +140,7 @@ let make_ml_actions variant index =
 	   * properly-typed semantic values *)
 	  let __result : $semtype variant left.nbase$ = $action_code$ in
 	  (* cast to SemanticValue.t *)
-	  Glr.SemanticValue.repr __result
+	  SemanticValue.repr __result
 	>>
       in
 
@@ -168,7 +168,7 @@ let make_ml_spec_func default semtype rettype kind func id =
       let real_rettype =
 	if rettype = semtype then
 	  let _loc = ghost 172 in
-	  <:ctyp<Glr.SemanticValue.t>>
+	  <:ctyp<SemanticValue.t>>
 	else
 	  rettype
       in
@@ -176,7 +176,7 @@ let make_ml_spec_func default semtype rettype kind func id =
       let untyped_params =
 	List.rev_map (fun param ->
 	  let _loc, param = Sloc._loc param in
-	  <:patt<($lid:"_" ^ param$ : Glr.SemanticValue.t)>>
+	  <:patt<($lid:"_" ^ param$ : SemanticValue.t)>>
 	) params
       in
 
@@ -185,14 +185,14 @@ let make_ml_spec_func default semtype rettype kind func id =
 	<:binding<__result : $rettype$ = $code$>>
 	:: List.map (fun param ->
 	  let _loc, param = Sloc._loc param in
-	  <:binding<($lid:param$ : $semtype$) = Glr.SemanticValue.obj $lid:"_" ^ param$>>
+	  <:binding<($lid:param$ : $semtype$) = SemanticValue.obj $lid:"_" ^ param$>>
 	) params
       in
 
       let result =
 	let _loc = ghost 195 in
 	if real_rettype != rettype then
-	  <:expr<Glr.SemanticValue.repr __result>>
+	  <:expr<SemanticValue.repr __result>>
 	else
 	  <:expr<__result>>
       in
@@ -300,21 +300,17 @@ let make_ml_action_code variant index final_prod verbatim =
     $Ast.sgSem_of_list verbatims$
 
     (* all that goes into the interface is the result type *)
-    include Glr.UserActions.S with type result = ($result_type$)
+    include UserActions.S with type result = ($result_type$)
   >>,
   <:str_item<
     (* Open module so record field labels are visible *)
-    open Glr.UserActions
+    open UserActions
 
     (* Emit verbatim sections here, so definitions from UserActions don't
      * mess up the action code and types. *)
     $Ast.stSem_of_list impl_verbatims$
 
-    let userFunctions : Glr.UserActions.functions = { $closures$ }
-
-    (* Open Glr after user code as not to pollute its namespace with modules
-     * internal to the engine implementation. *)
-    open Glr
+    let userFunctions : UserActions.functions = { $closures$ }
 
     (* main action function; uses the array emitted above *)
     let reductionAction (productionId : int) (svals : SemanticValue.t array) (start_p : Lexing.position) (end_p : Lexing.position) : SemanticValue.t =

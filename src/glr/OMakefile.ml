@@ -9,15 +9,8 @@ install Package ".DEFAULT" [
     "Arraystack";
     "Easy";
     "Engine";
-    "Lexerint";
     "Objpool";
     "Options";
-    "PtreeActions";
-    "PtreeNode";
-    "SemanticValue";
-    "SourceLocation";
-    "TokenInfo";
-    "UserActions";
   ];
 
   (* Library dependencies *)
