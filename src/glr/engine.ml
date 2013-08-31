@@ -113,6 +113,7 @@
 (* when true, print some diagnosis of failed parses *)
 let noisyFailedParse = true
 
+module Colour = TermColour.Make(TermColour.ANSI)
 
 (* We define our own versions of these exceptions, so that user code raising
  * the ones in Pervasives will not interfere with parser internals. *)
@@ -249,13 +250,85 @@ let stats glr =
   glr.stats
 
 
+(* produce a small unique integer for each memory address *)
+let unique_table = ref []
+let unique_id : SemanticValue.t -> string =
+  fun obj ->
+    try
+      snd (List.find (fun (addr, _) -> addr == obj) !unique_table)
+    with Not_found ->
+      let id =
+        Colour.pink ("@" ^ string_of_int (List.length !unique_table))
+      in
+      unique_table := (obj, id) :: !unique_table;
+      id
+
+
 (* ----------------- front ends to user code --------------- *)
+let terminalName userAct tokType =
+  let open UserActions in
+  Colour.yellow (
+    if Options._terminal_names () then
+      userAct.terminalName tokType
+    else
+      userAct.terminalAlias tokType
+  )
+
+
+let nonterminalName userAct nonterm =
+  Colour.yellow (userAct.UserActions.nonterminalName nonterm)
+
+
+let symbolName userAct sym =
+  assert (sym <> ParseTables.cSYMBOL_INVALID);
+
+  if ParseTables.symIsTerm sym then
+    terminalName userAct (ParseTables.symAsTerm sym)
+  else
+    nonterminalName userAct (ParseTables.symAsNonterm sym)
+
+
+let showTerminalValue userAct term sval =
+  userAct.UserActions.showTerminalValue term sval
+
+let showNontermValue userAct nonterm sval =
+  userAct.UserActions.showNontermValue nonterm sval
+
+let showSemanticValue userAct sym sval =
+  assert (sym <> ParseTables.cSYMBOL_INVALID);
+
+  if ParseTables.symIsTerm sym then
+    showTerminalValue userAct (ParseTables.symAsTerm sym) sval
+  else
+    showNontermValue userAct (ParseTables.symAsNonterm sym) sval
+
+
 let reductionAction userAct productionId svals start_p end_p =
   userAct.UserActions.reductionAction productionId svals start_p end_p
 
 
 let mergeAlternativeParses userAct lhsIndex left right =
-  userAct.UserActions.mergeAlternativeParses lhsIndex left right
+  if Options._trace_parse () then (
+    Printf.printf "%s %s\nL: %s %s\nR: %s %s\n"
+      (Colour.green "merge")
+      (nonterminalName userAct lhsIndex)
+      (unique_id left)
+      (showNontermValue userAct lhsIndex left)
+      (unique_id right)
+      (showNontermValue userAct lhsIndex right);
+    flush stdout;
+  );
+
+  let merged = userAct.UserActions.mergeAlternativeParses lhsIndex left right in
+
+  if Options._trace_parse () then (
+    Printf.printf "M: %s %s\n"
+      (unique_id merged)
+      (showNontermValue userAct lhsIndex merged);
+    flush stdout;
+  );
+
+  merged
 
 
 let keepNontermValue userAct lhsIndex sval =
@@ -270,6 +343,15 @@ let duplicateNontermValue userAct nonterm sval =
 
 let duplicateSemanticValue userAct sym sval =
   assert (sym <> ParseTables.cSYMBOL_INVALID);
+
+  if Options._trace_parse () then (
+    Printf.printf "%s %s%s %s\n"
+      (Colour.green "dup")
+      (symbolName userAct sym)
+      (unique_id sval)
+      (showSemanticValue userAct sym sval);
+    flush stdout;
+  );
 
   (* the C++ implementation checks for NULL sval, but I don't think
    * that can be here in the ML version, and I'm not convinced the
@@ -289,25 +371,19 @@ let deallocateNontermValue userAct nonterm sval =
 let deallocateSemanticValue userAct sym sval =
   assert (sym <> ParseTables.cSYMBOL_INVALID);
 
+  if Options._trace_parse () then (
+    Printf.printf "%s %s%s %s\n"
+      (Colour.green "del")
+      (symbolName userAct sym)
+      (unique_id sval)
+      (showSemanticValue userAct sym sval);
+    flush stdout;
+  );
+
   if ParseTables.symIsTerm sym then
     deallocateTerminalValue userAct (ParseTables.symAsTerm sym) sval
   else
     deallocateNontermValue userAct (ParseTables.symAsNonterm sym) sval
-
-
-let showTerminalValue userAct term sval =
-  userAct.UserActions.showTerminalValue term sval
-
-let showNontermValue userAct nonterm sval =
-  userAct.UserActions.showNontermValue nonterm sval
-
-let showSemanticValue userAct sym sval =
-  assert (sym <> ParseTables.cSYMBOL_INVALID);
-
-  if ParseTables.symIsTerm sym then
-    showTerminalValue userAct (ParseTables.symAsTerm sym) sval
-  else
-    showNontermValue userAct (ParseTables.symAsNonterm sym) sval
 
 
 let reclassifyToken userAct lexer token =
@@ -322,18 +398,6 @@ let reclassifyToken userAct lexer token =
 
   (* return all token properties *)
   tokType, tokSval, tokSloc
-
-
-let terminalName userAct tokType =
-  let open UserActions in
-  if Options._terminal_names () then
-    userAct.terminalName tokType
-  else
-    userAct.terminalAlias tokType
-
-
-let nonterminalName userAct nonterm =
-  userAct.UserActions.nonterminalName nonterm
 
 
 let cSTATE_INVALID = ParseTables.cSTATE_INVALID
@@ -374,8 +438,10 @@ let rec decRefCt glr node =
 
   node.referenceCount <- node.referenceCount - 1;
 
-  (*(Printf.printf "decrementing node %d to %d\n" node.state node.referenceCount);*)
-  (*(flush stdout);*)
+  if false then (
+    Printf.printf "decrementing node %d to %d\n" node.state node.referenceCount;
+    flush stdout;
+  );
 
   if node.referenceCount = 0 then (
     deinitStackNode glr node;
@@ -777,14 +843,7 @@ let rwlShiftActive glr tokType leftSibling rightSibling lhsIndex sval start_p en
         deallocateSemanticValue glr.userAct (getNodeSymbol glr rightSibling) sval;
       ) else (
         (* call user's merge code *)
-        if Options._trace_parse () then
-          Printf.printf "merging alternatives in %s\n"
-            (nonterminalName glr.userAct lhsIndex);
         sibLink.sval <- mergeAlternativeParses glr.userAct lhsIndex sibLink.sval sval;
-        if Options._trace_parse () then
-          Printf.printf "yielded @%d %s\n"
-            (Obj.magic sibLink.sval)
-            (showNontermValue glr.userAct lhsIndex sibLink.sval);
       );
 
       (* ok, done *)
@@ -866,8 +925,9 @@ let rwlShiftNonterminal glr tokType leftSibling lhsIndex sval start_p end_p =
   in
 
   if Options._trace_parse () then
-    Printf.printf "state %d, shift nonterm %d (%s), to state %d\n"
+    Printf.printf "state %d, %s nonterm %d (%s), to state %d\n"
       (leftSibling.state :> int)
+      (Colour.cyan "shift")
       (lhsIndex :> int)
       (nonterminalName glr.userAct lhsIndex)
       (rightSiblingState :> int);
@@ -887,8 +947,9 @@ let rec rwlRecursiveProcess glr tokType start_p path =
   let lhsIndex = ParseTables.getProdInfo_lhsIndex glr.tables path.prodIndex in
 
   if Options._trace_parse () then
-    Printf.printf "state %d, reducing by production %d (rhsLen=%d), back to state %d\n"
+    Printf.printf "state %d, %s by production %d (rhsLen=%d), back to state %d\n"
                    (path.startStateId :> int)
+                   (Colour.cyan "reduce")
                    path.prodIndex
                    rhsLen
                    (path.leftEdgeNode.state :> int);
@@ -908,7 +969,7 @@ let rec rwlRecursiveProcess glr tokType start_p path =
     (* put the sval in the array that will be passed to the user *)
     glr.toPass.(i) <- sib.sval;
     if Options._trace_parse () then
-      Printf.printf "toPass[%d] = @%d\n" i (Obj.magic sib.sval);
+      Printf.printf "toPass[%d] = %s\n" i (unique_id sib.sval);
 
     if sib.start_p != Lexing.dummy_pos then
       leftEdge := sib.start_p;
@@ -926,8 +987,8 @@ let rec rwlRecursiveProcess glr tokType start_p path =
     if not (keepNontermValue glr.userAct lhsIndex sval) then
       keep_cancel ();
     if Options._trace_parse () then
-      Printf.printf "result: @%d %s\n"
-        (Obj.magic sval)
+      Printf.printf "result: %s %s\n"
+        (unique_id sval)
         (showNontermValue glr.userAct lhsIndex sval);
    
     (* shift the nonterminal, sval *)
@@ -1026,8 +1087,9 @@ let rwlShiftTerminals glr tokType tokSval tokSloc =
         glr.stats.nondetShift <- glr.stats.nondetShift + 1;
 
       if Options._trace_parse () then
-        Printf.printf "state %d, shift token %s, to state %d\n"
+        Printf.printf "state %d, %s token %s, to state %d\n"
                        (state :> int)
+                       (Colour.cyan "shift")
                        (terminalName glr.userAct tokType)
                        (newState :> int);
 
@@ -1195,7 +1257,7 @@ let rec lrParseToken glr tokType tokSval tokSloc =
          * another advantage to the LR mode). *)
         glr.toPass.(i) <- sib.sval;
         if Options._trace_parse () then
-          Printf.printf "toPass[%d] = @%d\n" i (Obj.magic sib.sval);
+          Printf.printf "toPass[%d] = %s\n" i (unique_id sib.sval);
 
         (* if it has a valid source location, grab it *)
         if sib.start_p != Lexing.dummy_pos then
@@ -1225,8 +1287,9 @@ let rec lrParseToken glr tokType tokSval tokSloc =
       let newState = ParseTables.getGoto glr.tables !parsr.state lhsIndex in
 
       if Options._trace_parse () then (
-        Printf.printf "state %d, (unambig) reduce by %d (len=%d), back to %d then out to %d\n"
+        Printf.printf "state %d, (unambig) %s by %d (len=%d), back to %d then out to %d\n"
                       (startStateId :> int)
+                      (Colour.cyan "reduce")
                       prodIndex
                       rhsLen
                       (!parsr.state :> int)
@@ -1242,8 +1305,8 @@ let rec lrParseToken glr tokType tokSval tokSloc =
           if not (keepNontermValue glr.userAct lhsIndex sval) then
             keep_cancel ();
           if Options._trace_parse () then
-            Printf.printf "result: @%d %s\n"
-              (Obj.magic sval)
+            Printf.printf "result: %s %s\n"
+              (unique_id sval)
               (showNontermValue glr.userAct lhsIndex sval);
 
           sval
@@ -1282,8 +1345,9 @@ let rec lrParseToken glr tokType tokSval tokSloc =
       glr.stats.detShift <- glr.stats.detShift + 1;
 
     if Options._trace_parse () then (
-      Printf.printf "state %d, (unambig) shift token %d, to state %d\n"
+      Printf.printf "state %d, (unambig) %s token %d, to state %d\n"
                     (!parsr.state :> int)
+                    (Colour.cyan "shift")
                     (tokType :> int)
                     (newState :> int);
       flush stdout;
@@ -1443,7 +1507,7 @@ let grabTopSval glr node =
 
 let cleanupAfterParse (glr : 'result glr) : 'result =
   if Options._trace_parse () then
-    Printf.printf "Parse succeeded!\n";
+    Printf.printf "==== parse succeeded ====\n";
 
   if not (Arraystack.length glr.active_parsers = 1) then (
     Printf.printf "parsing finished with %d active parsers!\n"
@@ -1453,10 +1517,18 @@ let cleanupAfterParse (glr : 'result glr) : 'result =
     let last = Arraystack.top glr.active_parsers in
 
     (* prepare to run final action *)
-    let arr = Array.make 2 SemanticValue.null in
-    let nextToLast = (getUniqueLink last).sib in
-    arr.(0) <- grabTopSval glr nextToLast;      (* sval we want *)
-    arr.(1) <- grabTopSval glr last;            (* EOF's sval *)
+    let arr =
+      Array.init 2 (function
+        | 0 ->
+            let nextToLast = (getUniqueLink last).sib in
+            (* sval we want *)
+            grabTopSval glr nextToLast
+        | 1 ->
+            (* EOF's sval *)
+            grabTopSval glr last
+        | _ -> assert false
+      )
+    in
 
     (* reduce *)
     let finalProductionIndex = ParseTables.getFinalProductionIndex glr.tables in
@@ -1475,6 +1547,8 @@ let cleanupAfterParse (glr : 'result glr) : 'result =
 
 
 let parse (glr : 'result glr) lexer : 'result =
+  unique_table := [];
+
   if glr.globalNodeColumn <> 0 then
     failwith "cannot reuse glr object for multiple parses";
 
@@ -1484,18 +1558,19 @@ let parse (glr : 'result glr) lexer : 'result =
     addTopmostParser glr first;
   end;
 
-  (* main parsing loop *)
+  if Options._trace_parse () then
+    Printf.printf "==== starting parse ====\n";
+
+  (* main parsing loop; this function never returns normally *)
   try
 
-    (* this loop never returns normally *)
-    (*Valgrind.Callgrind.instrumented*)
-      (* get first token and start parsing *)
-      (main_loop glr lexer) Lexerint.(lexer.token ())
+    (* get first token and start parsing *)
+    main_loop glr lexer Lexerint.(lexer.token ())
 
   with End_of_file ->
 
-      (* end of parse *)
-      cleanupAfterParse glr
+    (* end of parse *)
+    cleanupAfterParse glr
 
 
 (**********************************************************
