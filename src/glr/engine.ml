@@ -975,7 +975,7 @@ let rec rwlRecursiveProcess glr tokType start_p path =
     (* put a copy of the sval in the array that will be passed to the user *)
     glr.toPass.(i) <- duplicateSemanticValue glr.userAct path.symbols.(i) sib.sval;
     if Options._trace_parse () then
-      Printf.printf "toPass[%d] = %s\n" i (unique_id sib.sval);
+      Printf.printf "toPass[%d] = %s\n" i (unique_id glr.toPass.(i));
 
     if sib.start_p != Lexing.dummy_pos then
       leftEdge := sib.start_p;
@@ -990,7 +990,8 @@ let rec rwlRecursiveProcess glr tokType start_p path =
     if not (keepNontermValue glr.userAct lhsIndex sval) then
       keep_cancel ();
     if Options._trace_parse () then
-      Printf.printf "result: %s %s\n"
+      Printf.printf "result: %s%s %s\n"
+        (nonterminalName glr.userAct lhsIndex)
         (unique_id sval)
         (showNontermValue glr.userAct lhsIndex sval);
    
@@ -1260,7 +1261,7 @@ let rec lrParseToken glr tokType tokSval tokSloc =
          * another advantage to the LR mode). *)
         glr.toPass.(i) <- sib.sval;
         if Options._trace_parse () then
-          Printf.printf "toPass[%d] = %s\n" i (unique_id sib.sval);
+          Printf.printf "toPass[%d] = %s\n" i (unique_id glr.toPass.(i));
 
         (* if it has a valid source location, grab it *)
         if sib.start_p != Lexing.dummy_pos then
