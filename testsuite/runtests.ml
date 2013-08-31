@@ -17,4 +17,12 @@ TestFramework.(run "testsuite" [
       "elkhound/scannerless/tests";
     ];
   };
+  { empty with
+    tool = "cxxparser.native";
+    suffixes = [".cc"];
+    options = Some "-ptree-indent 1";
+    dirs = [
+      "elkhound/cxxparser/tests";
+    ];
+  };
 ])

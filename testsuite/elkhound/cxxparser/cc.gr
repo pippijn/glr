@@ -1,0 +1,202 @@
+terminals {
+  include("ccTerminals.ids")
+
+  
+  token(string) TOK_INT_LITERAL;
+  token(string) TOK_FLOAT_LITERAL;
+  token(string) TOK_CHAR_LITERAL;
+  token(string) TOK_STRING_LITERAL;
+
+  
+  token(string) TOK_NAME;
+  token(string) TOK_TYPE_NAME;
+  token(string) TOK_VARIABLE_NAME;
+
+  
+  token(string) TOK_ANNOTATION;
+
+  precedence {
+    
+    prec	200 TOK_PREFER_REDUCE;
+    right	195 "::";		
+    prec	190 "const" "volatile" "else" "[";
+
+    
+    
+
+    left	120 ".*" "->*";		
+    left	110 "*" "/" "%";
+    left	100 "+" "-";
+    left	 90 "<<" ">>";
+
+    
+    
+
+    left	 70 "==" "!=";
+    left	 60 "&";
+    left	 50 "^";
+    left	 40 "|";
+    left	 30 "&&";
+    left	 20 "||";
+
+    
+    
+    
+    
+
+    prec	  1 TOK_PREFER_SHIFT;
+    
+  }
+}
+
+
+nonterm(int) File {
+  -> t:TemplateArgumentList;
+}
+
+
+
+
+nonterm Identifier {
+  -> n:TOK_NAME;
+}
+
+
+nonterm TypeName {
+  -> n:TOK_TYPE_NAME;
+}
+
+
+
+
+
+
+nonterm PrimaryExpression {
+  -> e:IdExpression
+	[Variable] {0}
+}
+
+nonterm IdExpression {
+  fun merge(l,r) {0}
+
+  -> id:UnqualifiedId
+	[Id];
+}
+
+
+nonterm UnqualifiedId {
+  fun merge(l,r) {0}
+
+  -> id:Identifier			[Name]		{0}
+
+  -> id:TemplateId			[Template];
+}
+
+
+nonterm BinExp_mid {
+  
+  fun merge(l,r) {0}
+
+  -> e:PrimaryExpression [PrimaryExpression];
+
+  
+  -> left:BinExp_mid "<"  right:PrimaryExpression	[Less]		{0}
+  -> left:BinExp_mid ">"  right:PrimaryExpression	[Greater]	{0}
+}
+
+
+nonterm BinaryExpression -> e:BinExp_mid;
+
+
+nonterm ConditionalExpression {
+  
+  fun merge(l,r) {0}
+
+  -> e:BinaryExpression [BinaryExpression];
+}
+
+
+nonterm AssignmentExpression {
+  fun merge(l,r) {0}
+
+  -> e:ConditionalExpression [ConditionalExpression];
+}
+
+nonterm Expression {
+  
+  fun merge(l,r) {0}
+
+  -> ae:AssignmentExpression
+	[Head] {0}
+
+  -> e:Expression "," ae:AssignmentExpression
+	[List] {0}
+}
+
+
+
+nonterm TypeSpecifier {
+  -> n:PQTypeName
+	[Name] {0}
+}
+
+
+
+nonterm PQTypeName {
+  fun merge(l,r) {0}
+
+  -> n:PQTypeName_ncc
+	[Local] {0}
+}
+
+
+nonterm PQTypeName_ncc {
+  fun merge(l,r) {0}
+
+  -> n:Identifier			precedence("::")
+	[Id] {0}
+  -> id:TemplateId			precedence("::")
+	[TemplateId] {0}
+}
+
+
+nonterm TypeId {
+  -> spec:TypeSpecifier
+	[TypeId] {0}
+}
+
+nonterm TemplateArgumentListOpt {
+  -> empty			{0}
+  -> list:TemplateArgumentList	{0}
+}
+
+nonterm TemplateId {
+  -> n:Identifier "<" list:TemplateArgumentListOpt ">"
+	[Identifier] {0}
+}
+
+nonterm TemplateArgumentList {
+  
+  fun merge(l,r) {0}
+
+  -> next:TemplateArgumentListContinuation
+     typeid:TypeId
+	[Type] {0}
+
+  -> next:TemplateArgumentListContinuation
+     e:AssignmentExpression
+	[NonType] {0}
+
+  
+  
+}
+
+nonterm TemplateArgumentListContinuation {
+  fun merge(l,r) {0}
+
+  -> empty
+	[Head] {0}
+
+  -> x:TemplateArgumentList ","
+	[Tail] {0}
+}
