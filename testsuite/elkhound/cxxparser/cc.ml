@@ -21,10 +21,10 @@ let parse_ptree choice file =
 
 let main =
   List.iter (fun file ->
-    parse_ptree 0 file;
+    (*parse_ptree 0 file;*)
     parse_ptree 1 file;
-    parse_ptree 2 file;
-    parse_ptree 3 file;
+    (*parse_ptree 2 file;*)
+    (*parse_ptree 3 file;*)
   )
 
 

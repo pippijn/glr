@@ -1,1 +1,14 @@
 recurse-into ($(glob D, *))
+
+# Target
+Name		= glr
+
+# Sub-documents
+Parts[] =
+  glr/engine.ml
+
+Bibliography[] =
+  glr
+
+TARGET = $(latex-document)
+.DEFAULT: $(TARGET)

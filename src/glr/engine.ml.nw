@@ -1,132 +1,136 @@
-(* Implementation Notes
- *
- * A design point: [GLR] uses more 'global's than I do.  My criteria
- * here is that something should be global (stored in type glr) if
- * it has meaning between processing of tokens.  If something is only
- * used during the processing of a single token, then I make it a
- * parameter where necessary.
- *
- * Update: I've decided to make 'currentToken' and 'parserWorklist'
- * global because they are needed deep inside of 'glrShiftNonterminal',
- * though they are not needed by the intervening levels, and their
- * presence in the argument lists would therefore only clutter them.
- *
- * Description of the various lists in play here:
- *
- *   active_parsers
- *   --------------
- *   The active parsers are at the frontier of the parse tree
- *   space.  It *never* contains more than one stack node with
- *   a given parse state; I call this the unique-state property
- *   (USP).  If we're about to add a stack node with the same
- *   state as an existing node, we merge them (if it's a shift,
- *   we add another leftAdjState; if it's a reduction, we add a
- *   rule node *and* another leftAdjState).
- *
- *   Before a token is processed, active_parsers contains those
- *   parsers that successfully shifted the previous token.  This
- *   list is then walked to make the initial reduction worklist.
- *
- *   Before the shifts are processed, the active_parsers list is
- *   cleared.  As each shift is processed, the resulting parser is
- *   added to active_parsers (modulo USP).
- *
- *
- * Discussion of path re-examination, called do-limited-reductions by
- * [GLR]:
- *
- * After thinking about this for some time, I have reached the conclusion
- * that the only way to handle the problem is to separate the collection
- * of paths from the iteration over them.
- *
- * Here are several alternative schemes, and the reasons they don't
- * work:
- *
- *   1. [GLR]'s approach of limiting re-examination to those involving
- *      the new link
- *
- *      This fails because it does not prevent re-examined paths
- *      from appearing in the normal iteration also.
- *
- *   2. Modify [GLR] so the new link can't be used after the re-examination
- *      is complete
- *
- *      Then if *another* new link is added, paths involving both new
- *      links wouldn't be processed.
- *
- *   3. Further schemes involving controlling which re-examination stage can
- *      use which links
- *
- *      Difficult to reason about, unclear a correct scheme exists, short
- *      of the full-blown path-listing approach I'm going to take.
- *
- *   4. My first "fix" which assumes there is never more than one path to
- *      a given parser
- *
- *      This is WRONG.  There can be more than one path, even as all such
- *      paths are labeled the same (namely, with the RHS symbols).  Consider
- *      grammar "E -> x | E + E" parsing "x+x+x": both toplevel parses use
- *      the "E -> E + E" rule, and both arrive at the root parser
- *
- * So, the solution I will implement is to collect all paths into a list
- * before processing any of them.  During path re-examination, I also will
- * collect paths into a list, this time only those that involve the new
- * link.
- *
- * This scheme is clearly correct, since path collection cannot be disrupted
- * by the process of adding links, and when links are added, exactly the new
- * paths are collected and processed.  It's easy to see that every path is
- * considered exactly once.
- *
- *
- * MAJOR UPDATE (12/06/02):  I've replaced the state worklist (SWL) core
- * used in all previous GLR implementations with a reduction worklist (RWL)
- * core.  This core is just as fast, but can be implemented to always
- * avoid the yield-then-merge problem for acyclic grammars.
- *
- *
- * Below, parse-tree building activity is marked "TREEBUILD".
- *)
+\section{GLR Engine}
 
+A design point: \cite{GLR} uses more globals than I do. My criterion here is
+that something should be global (stored in type [[glr]]) if it has meaning
+between processing of tokens.  If something is only used during the processing
+of a single token, then I make it a parameter where necessary.
 
-(* Relative to C++ implementation, what is not done:
- *   - Table compression
- *   - Heavy testing of the mini-LR core
- *)
+Update: I've decided to make [[currentToken]] and [[parserWorklist]]
+global because they are needed deep inside of [[glrShiftNonterminal]], though
+they are not needed by the intervening levels, and their presence in the
+argument lists would therefore only clutter them.
 
+Description of the various lists in play here:
+
+\subsection{[[active_parsers]]}
+
+The active parsers are at the frontier of the parse tree space.  It
+\textit{never} contains more than one stack node with a given parse state; I
+call this the unique-state property (USP).  If we're about to add a stack node
+with the same state as an existing node, we merge them. If it's a shift, we add
+another [[leftAdjState]]; if it's a reduction, we add a rule node
+\textit{and} another [[leftAdjState]].
+
+Before a token is processed, [[active_parsers]] contains those parsers that
+successfully shifted the previous token.  This list is then walked to make the
+initial reduction work-list.
+
+Before the shifts are processed, the [[active_parsers]] list is cleared.  As
+each shift is processed, the resulting parser is added to [[active_parsers]]
+(modulo USP).
+
+\subsection{Path re-examination}
+
+Discussion of path re-examination, called do-limited-reductions by \cite{GLR}:
+
+After thinking about this for some time, I have reached the conclusion that the
+only way to handle the problem is to separate the collection of paths from the
+iteration over them.
+
+Here are several alternative schemes, and the reasons they don't work:
+
+\begin{enumerate}
+
+  \item \cite{GLR}'s approach of limiting re-examination to those involving the
+    new link
+
+    This fails because it does not prevent re-examined paths from appearing in
+    the normal iteration also.
+
+  \item Modify \cite{GLR} so the new link can't be used after the re-examination
+    is complete
+
+    Then if \textit{another} new link is added, paths involving both new links
+    wouldn't be processed.
+
+  \item Further schemes involving controlling which re-examination stage can use
+    which links
+
+    Difficult to reason about, unclear a correct scheme exists, short of the
+    full-blown path-listing approach I'm going to take.
+
+  \item My first "fix" which assumes there is never more than one path to a
+    given parser
+
+    This is \textbf{wrong}. There can be more than one path, even as all such
+    paths are labelled the same (namely, with the RHS symbols).  Consider
+    grammar $E \to x | E E$ parsing $xxx$: both top-level parses use the $E \to
+    E E$ rule, and both arrive at the root parser
+
+\end{enumerate}
+
+So, the solution I will implement is to collect all paths into a list before
+processing any of them. During path re-examination, I also will collect paths
+into a list, this time only those that involve the new link.
+
+This scheme is clearly correct, since path collection cannot be disrupted by the
+process of adding links, and when links are added, exactly the new paths are
+collected and processed.  It's easy to see that every path is considered exactly
+once.
+
+I've replaced the state work-list (SWL) core used in all previous GLR
+implementations with a reduction work-list (RWL) core.  This core is just as
+fast, but can be implemented to always avoid the yield-then-merge problem for
+acyclic grammars.
+
+Below, parse-tree building activity is marked "TREEBUILD".
+
+Relative to C++ implementation, what is not done:
+
+\begin{itemize}
+  \item Table compression
+  \item Heavy testing of the mini-LR core
+\end{itemize}
+
+<<ml>>=
 
 module Colour = TermColour.Make(TermColour.HTML)
-
-(* We define our own versions of these exceptions, so that user code raising
- * the ones in Pervasives will not interfere with parser internals. *)
+@
+We define our own versions of this exception, so that user code raising
+the ones in [[Pervasives]] will not interfere with parser internals.
+<<ml>>=
 exception End_of_file
 
-(* These exceptions are part of the public interface. *)
+@
+These Exceptions are part of the public interface.
+<<ml>>=
 exception ParseError of ParseTables.state_id * (*token*)ParseTables.term_index
 exception Located of SourceLocation.t * exn * string
-
 
 let keep_cancel () =
   UserActions.cancel "keep() returned false"
 
+@
+\subsection{GLR engine types}
 
-(**********************************************************
- * :: GLR engine types
- **********************************************************)
+\subsubsection{Accounting statistics}
+<<ml>>=
 
-(* ------------------ accounting statistics ----------------- *)
-
-(* Private mutable statistics *)
+@
+Private mutable statistics.
+<<ml>>=
 type statistics = {
-  mutable numStackNodesAllocd	: int;
-  mutable maxStackNodesAllocd	: int;
+  mutable numStackNodes		: int;
+  mutable maxStackNodes		: int;
   mutable detShift		: int;
   mutable detReduce		: int;
   mutable nondetShift		: int;
   mutable nondetReduce		: int;
 }
 
-(* Public immutable statistics *)
+@
+Public immutable statistics.
+<<ml>>=
 type stats = {
   num_stack_nodes		: int;
   max_stack_nodes		: int;
@@ -136,118 +140,157 @@ type stats = {
   nondet_reduce			: int;
 }
 
+@
+\subsubsection{GLR graph}
 
-(* link from one stack node to another *)
+Link from one stack node to another.
+<<ml>>=
 type sibling_link = {
-  (* stack node we're pointing at; == StackNode.null if none *)
+@
+  Stack node we're pointing at; [[StackNode.null]] if none.
+<<ml>>=
   mutable sib			: stack_node;
-
-  (* semantic value on this link *)
+@
+  Semantic value on this link.
+<<ml>>=
   mutable sval			: SemanticValue.t;
-
-  (* source locations *)
+@
+  Source locations.
+<<ml>>=
   mutable start_p		: Lexing.position;
   mutable end_p			: Lexing.position;
 
   (* possible TODO: yield count *)
 }
 
-(* node in the GLR graph-structured stack; all fields are
- * mutable because these are stored in a pool for explicit re-use *)
+@
+Node in the GLR graph-structured stack; all fields are
+mutable because these are stored in a pool for explicit re-use.
+<<ml>>=
 and stack_node = {
-  (* LR parser state when this node is at the top *)
+@
+  LR parser state when this node is at the top.
+<<ml>>=
   mutable state			: ParseTables.state_id;
-
-  (* pointers to adjacent (to the left) stack nodes *)
-  (* possible TODO: put links into a pool so I can deallocate them *)
+@
+  Pointers to adjacent (to the left) stack nodes.
+  Possible TODO: put links into a pool so I can deallocate them.
+<<ml>>=
   mutable leftSiblings		: sibling_link list;
-
-  (* logically first sibling in the sibling list; separated out
-   * from 'leftSiblings' for performance reasons *)
+@
+  Logically first sibling in the sibling list; separated out
+  from [[leftSiblings]] for performance reasons.
+<<ml>>=
   mutable firstSib		: sibling_link;
-
-  (* number of sibling links pointing at this node, plus the
-   * number of worklists this node appears in *)
+@
+  Number of sibling links pointing at this node, plus the
+  number of worklists this node appears in.
+<<ml>>=
   mutable referenceCount	: int;
-
-  (* number of links we can follow to the left before hitting a node
-   * that has more than one sibling *)
+@
+  Number of links we can follow to the left before hitting a node
+  that has more than one sibling.
+<<ml>>=
   mutable determinDepth		: int;
-
-  (* position of token that was active when this node was created
-   * (or pulled from pool); used in yield-then-merge calculations *)
+@
+  Position of token that was active when this node was created
+  (or pulled from pool); used in yield-then-merge calculations.
+<<ml>>=
   mutable column		: int;
 }
 
-(* this is a path that has been queued for reduction;
- * all fields mutable to support pooling *)
+@
+This is a path that has been queued for reduction;
+all fields mutable to support pooling
+<<ml>>=
 type path = {
-  (* array of sibling links, i.e. the path; 0th element is
-   * leftmost link *)
+@
+  Array of sibling links, i.e. the path; 0th element is leftmost link.
+<<ml>>=
   sibLinks			: sibling_link array;
-
-  (* corresponding array of symbol ids to interpret svals *)
+@
+  Corresponding array of symbol ids to interpret svals.
+<<ml>>=
   symbols			: ParseTables.symbol_id array;
-
-  (* rightmost state's id *)
+@
+  Rightmost state's id.
+<<ml>>=
   mutable startStateId		: ParseTables.state_id;
-
-  (* production we're going to reduce with *)
+@
+  Production we're going to reduce with.
+<<ml>>=
   mutable prodIndex		: int;
-
-  (* number of right hand side symbols in this production *)
+@
+  Number of right hand side symbols in this production.
+<<ml>>=
   mutable rhsLen		: int;
-
-  (* column from leftmost stack node *)
+@
+  Column from leftmost stack node.
+<<ml>>=
   mutable startColumn		: int;
-
-  (* the leftmost stack node itself *)
+@
+  The leftmost stack node itself.
+<<ml>>=
   mutable leftEdgeNode		: stack_node;
-
-  (* next path in dequeueing order *)
+@
+  Next path in dequeueing order.
+<<ml>>=
   mutable next			: path option;
 }
 
-
-(* GLR parser object *)
+@
+GLR Parser object.
+<<ml>>=
 type 'result glr = {
-  (* top of priority queue of reduction paths *)
+@
+  Top of priority queue of reduction paths.
+<<ml>>=
   mutable top			: path option;
-
-  (* parse tables from the grammar *)
+@
+  Parse tables from the grammar.
+<<ml>>=
   tables			: ParseTables.t;
-
-  (* user-specified actions *)
+@
+  User-specified actions.
+<<ml>>=
   userAct			: 'result UserActions.t;
-
-  (* treat this as a local variable of RWL.processWorklist, included
-   * here just to avoid unnecessary repeated allocation *)
+@
+  Treat this as a local variable of [[RWL.processWorklist]], included
+  here just to avoid unnecessary repeated allocation.
+<<ml>>=
   toPass			: SemanticValue.t array;
-
-  (* pool of path objects *)
+@
+  Pool of path objects.
+<<ml>>=
   pathPool			: path Objpool.t;
-
-  (* set of topmost parser nodes *)
+@
+  Set of topmost parser nodes.
+<<ml>>=
   active_parsers		: stack_node Arraystack.t;
-
-  (* swapped with 'active_parsers' periodically, for performance reasons *)
+@
+  Swapped with [[active_parsers]] periodically, for performance reasons.
+<<ml>>=
   prev_active			: stack_node Arraystack.t;
-
-  (* node allocation pool; shared with GLR.parseToken *)
+@
+  Node allocation pool; shared with [[GLR.parseToken]].
+<<ml>>=
   stackNodePool			: stack_node Objpool.t;
-
-  (* current token number *)
+@
+  Current token number.
+<<ml>>=
   mutable globalNodeColumn	: int;
-
-  (* parser action statistics *)
+@
+  Parser action statistics.
+<<ml>>=
   stats				: statistics;
 }
 
+@
+\subsection{Id}
 
-(**********************************************************
- * :: Produce a small unique integer for each
- *    physically different semantic value
- **********************************************************)
+Produce a small unique integer for each physically
+different semantic value.
+<<ml>>=
 
 module Id = struct
 
@@ -271,17 +314,17 @@ module Id = struct
 end
 
 
-(**********************************************************
- * :: Front ends to user code
- **********************************************************)
+@
+\subsection{Front ends to user code}
+<<ml>>=
 
 module User = struct
 
   open UserActions
 
-  (**********************************************************
-   * :: Symbol name
-   **********************************************************)
+@
+\subsubsection{Symbol name}
+<<ml>>=
 
   let terminalName userAct tokType =
     Colour.yellow (
@@ -304,10 +347,9 @@ module User = struct
     else
       nonterminalName userAct (ParseTables.symAsNonterm sym)
 
-
-  (**********************************************************
-   * :: Symbol string representation
-   **********************************************************)
+@
+\subsubsection{Symbol string representation}
+<<ml>>=
 
   let showTerminalValue userAct term sval =
     Colour.escape (userAct.showTerminalValue term sval)
@@ -325,10 +367,9 @@ module User = struct
     else
       showNontermValue userAct (ParseTables.symAsNonterm sym) sval
 
-
-  (**********************************************************
-   * :: Semantic actions (reduce/merge/keep)
-   **********************************************************)
+@
+\subsubsection{Semantic actions (reduce/merge/keep)}
+<<ml>>=
 
   let reductionAction userAct productionId svals start_p end_p =
     userAct.reductionAction productionId svals start_p end_p
@@ -358,9 +399,9 @@ module User = struct
     userAct.keepNontermValue lhsIndex sval
 
 
-  (**********************************************************
-   * :: Cloning semantic values for multi-yield
-   **********************************************************)
+@
+\subsubsection{Cloning semantic values for multi-yield}
+<<ml>>=
 
   let duplicateTerminalValue userAct term sval =
     userAct.duplicateTerminalValue term sval
@@ -371,10 +412,12 @@ module User = struct
   let duplicateSemanticValue userAct sym sval =
     assert (sym <> ParseTables.invalid_symbol);
 
+@
+    The C++ implementation checks for NULL sval, but that
+    doesn't make sense in the ML version, as a zero value
+    for an sval is perfectly safe and should be allowed.
+<<ml>>=
     let copy =
-      (* The C++ implementation checks for NULL sval, but that doesn't
-       * make sense in the ML version, as a zero value for an sval is
-       * perfectly safe and should be allowed. *)
       if ParseTables.symIsTerm sym then
         duplicateTerminalValue userAct (ParseTables.symAsTerm sym) sval
       else
@@ -392,9 +435,12 @@ module User = struct
     copy
 
 
-  (**************************************************************
-   * :: Destroying semantic values before the parser loses them
-   **************************************************************)
+@
+\subsubsection{Destroying semantic values}
+
+  Before the parser loses them, we give the user a chance
+  to do something with the semantic values.
+<<ml>>=
 
   let deallocateTerminalValue userAct term sval =
     userAct.deallocateTerminalValue term sval
@@ -418,35 +464,42 @@ module User = struct
       deallocateNontermValue userAct (ParseTables.symAsNonterm sym) sval
 
 
-  (**************************************************************
-   * :: Reclassify token (e.g. TOK_NAME -> TOK_TYPE_NAME).
-   **************************************************************)
+@
+\subsubsection{Reclassify token}
+
+  E.g. [[TOK_NAME -> TOK_TYPE_NAME]].
+<<ml>>=
 
   let reclassifyToken userAct lexer token =
     let open Lexerint in
-    (* get original type/sval/sloc *)
+@
+    Get original type/sval/sloc.
+<<ml>>=
     let tokType = lexer.index token in
     let tokSval = lexer.sval token in
     let tokSloc = lexer.sloc token in
-
-    (* reclassify type *)
+@
+    Reclassify type.
+<<ml>>=
     let tokType = userAct.reclassifyToken tokType tokSval in
-
-    (* return all token properties *)
+@
+    Return all token properties.
+<<ml>>=
     tokType, tokSval, tokSloc
 
 end
 
 
-(**********************************************************
- * :: Parallel parsers
- **********************************************************)
+@
+\subsection{Parallel parsers}
+<<ml>>=
 
 module SiblingLink = struct
 
   type t = sibling_link
-
-  (* NULL sibling link *)
+@
+  NULL sibling link.
+<<ml>>=
   let null : t = Obj.magic ()
 
   let create sib sval start_p end_p = { sib; sval; start_p; end_p; }
@@ -454,9 +507,9 @@ module SiblingLink = struct
 end
 
 
-(**********************************************************
- * :: Single parser node
- **********************************************************)
+@
+\subsection{Single parser node}
+<<ml>>=
 
 module StackNode : sig
 
@@ -512,15 +565,18 @@ module StackNode : sig
 end = struct
 
   type t = stack_node
-
-  (* NULL stack node *)
+@
+  NULL stack node.
+<<ml>>=
   let null : t = Obj.magic ()
 
 
   let create () = {
     state          = ParseTables.invalid_state;
     leftSiblings   = [];
-    firstSib       = SiblingLink.create null SemanticValue.null Lexing.dummy_pos Lexing.dummy_pos;
+    firstSib       =
+      SiblingLink.create null SemanticValue.null
+        Lexing.dummy_pos Lexing.dummy_pos;
     referenceCount = 0;
     determinDepth  = 0;
     column         = 0;
@@ -541,7 +597,8 @@ end = struct
     node.referenceCount <- node.referenceCount - 1;
 
     if false then
-      Printf.printf "decrementing node %d to %d\n" node.state node.referenceCount;
+      Printf.printf "decrementing node %d to %d\n"
+        node.state node.referenceCount;
 
     if node.referenceCount = 0 then (
       deinit glr node;
@@ -551,30 +608,36 @@ end = struct
 
   and deinit glr node =
     deallocSemanticValues glr node;
-
-    (* this is implicit in the C++ implementation because firstSib.sib
-     * is an RCPtr in C++ *)
+@
+    This is implicit in the C++ implementation because [[firstSib.sib]]
+    is an [[RCPtr]] in C++.
+<<ml>>=
     if node.firstSib.sib != null then
       dec_refcnt glr node.firstSib.sib;
 
     node.firstSib.sib <- null;
 
     if Options._accounting () then (
-      glr.stats.numStackNodesAllocd <- glr.stats.numStackNodesAllocd - 1;
+      glr.stats.numStackNodes <- glr.stats.numStackNodes - 1;
     )
 
 
   and deallocSemanticValues glr node =
-    (* explicitly deallocate siblings, so I can deallocate their
-     * semantic values if necessary (this requires knowing the
-     * associated symbol, which the sibling_links don't know) *)
+@
+    Explicitly deallocate siblings, so I can deallocate their
+    semantic values if necessary (this requires knowing the
+    associated symbol, which the [[sibling_links]] don't know).
+<<ml>>=
     if node.firstSib.sib != null then
-      User.deallocateSemanticValue glr.userAct (getNodeSymbol glr node) node.firstSib.sval;
+      User.deallocateSemanticValue glr.userAct (getNodeSymbol glr node)
+        node.firstSib.sval;
 
     List.iter (fun s ->
-      User.deallocateSemanticValue glr.userAct (getNodeSymbol glr node) s.sval;
-
-      (* this is implicit in the C++ version, due to Owner<> *)
+      User.deallocateSemanticValue glr.userAct (getNodeSymbol glr node)
+        s.sval;
+@
+      This is implicit in the C++ version, due to [[Owner<>]].
+<<ml>>=
       dec_refcnt glr s.sib
     ) node.leftSiblings;
 
@@ -603,9 +666,9 @@ end = struct
 
   let make glr state =
     if Options._accounting () then (
-      glr.stats.numStackNodesAllocd <- glr.stats.numStackNodesAllocd + 1;
-      if glr.stats.numStackNodesAllocd > glr.stats.maxStackNodesAllocd then
-        glr.stats.maxStackNodesAllocd <- glr.stats.numStackNodesAllocd;
+      glr.stats.numStackNodes <- glr.stats.numStackNodes + 1;
+      if glr.stats.numStackNodes > glr.stats.maxStackNodes then
+        glr.stats.maxStackNodes <- glr.stats.numStackNodes;
     );
 
     let node = Objpool.alloc glr.stackNodePool in
@@ -613,36 +676,44 @@ end = struct
     node.column <- glr.globalNodeColumn;
     node
 
-
-  (* add the very first sibling *)
+@
+  Add the very first sibling.
+<<ml>>=
   let addFirstSiblingLink_no_refcnt node leftSib sval start_p end_p =
     assert (hasZeroSiblings node);
-
-    (* my depth will be my new sibling's depth, plus 1 *)
+@
+    My depth will be my new sibling's depth, plus 1.
+<<ml>>=
     node.determinDepth <- leftSib.determinDepth + 1;
-
-    (* we don't have any siblings yet; use embedded
-     * don't update reference count of 'leftSib', instead caller must do so *)
+@
+    We don't have any siblings yet; use embedded
+    don't update reference count of [[leftSib]], instead caller must do so.
+<<ml>>=
     assert (hasZeroSiblings node);
-    node.firstSib.sib <- leftSib;     (* update w/o refct *)
+    node.firstSib.sib <- leftSib;     (* update w/o refcount *)
 
     node.firstSib.sval <- sval;
     node.firstSib.start_p <- start_p;
     node.firstSib.end_p <- end_p
 
 
-  (* pulled out of 'addSiblingLink' so I can inline addSiblingLink
-   * without excessive object code bloat; the branch represented by
-   * the code in this function is much less common *)
+@
+  Pulled out of [[addSiblingLink]] so I can inline addSiblingLink
+  without excessive object code bloat; the branch represented by
+  the code in this function is much less common.
+<<ml>>=
   let addAdditionalSiblingLink node leftSib sval start_p end_p =
-    (* there's currently at least one sibling, and now we're adding another;
-     * right now, no other stack node should point at this one (if it does,
-     * most likely will catch that when we use the stale info)
-     *
-     * now there is a second outgoing pointer *)
-    node.determinDepth <- 0;
+@
+  There's currently at least one sibling, and now we're adding another;
+  right now, no other stack node should point at this one (if it does,
+  most likely will catch that when we use the stale info).
 
-    (* this was implicit in the C++ verison *)
+  Now there is a second outgoing pointer.
+<<ml>>=
+    node.determinDepth <- 0;
+@
+    This was implicit in the C++ version.
+<<ml>>=
     inc_refcnt leftSib;
 
     let link = SiblingLink.create leftSib sval start_p end_p in
@@ -650,21 +721,26 @@ end = struct
 
     link
 
-
-  (* add a new sibling by creating a new link *)
+@
+  Add a new sibling by creating a new link.
+<<ml>>=
   let addSiblingLink node leftSib sval start_p end_p =
     if hasZeroSiblings node then (
       addFirstSiblingLink_no_refcnt node leftSib sval start_p end_p;
-
-      (* manually increment leftSib's refct *)
+@
+      Manually increment [[leftSib]]'s reference count.
+<<ml>>=
       inc_refcnt leftSib;
-
-      (* pointer to firstSib.. *)
+@
+      Pointer to [[firstSib]]..
+<<ml>>=
       node.firstSib
     ) else (
-      (* as best I can tell, x86 static branch prediction is simply
-       * "conditional forward branches are assumed not taken", hence
-       * the uncommon case belongs in the 'else' branch *)
+@
+      As best I can tell, x86 static branch prediction is simply
+      "conditional forward branches are assumed not taken", hence
+      the uncommon case belongs in the [[else]] branch.
+<<ml>>=
       addAdditionalSiblingLink node leftSib sval start_p end_p
     )
 
@@ -675,11 +751,15 @@ end = struct
 
 
   let getLinkTo node another =
-    (* check first.. *)
+@
+    Check first..
+<<ml>>=
     if node.firstSib.sib == another then (
       Some node.firstSib
     ) else (
-      (* check rest *)
+@
+      Check rest.
+<<ml>>=
       try
         let link = List.find (fun candidate -> candidate.sib == another) node.leftSiblings in
         Some link
@@ -694,7 +774,9 @@ end = struct
     if hasZeroSiblings node then (
       1
     ) else if hasOneSibling node then (
-      (* it must be equal to sibling's, plus one *)
+@
+      It must be equal to sibling's, plus one.
+<<ml>>=
       node.firstSib.sib.determinDepth + 1
     ) else (
       assert (hasMultipleSiblings node);
@@ -708,9 +790,9 @@ end = struct
 end
 
 
-(**********************************************************
- * :: Path queue management
- **********************************************************)
+@
+\subsection{Path queue management}
+<<ml>>=
 
 module Path : sig
 
@@ -763,8 +845,9 @@ end = struct
   let delete glr p =
     Objpool.dealloc glr.pathPool p
 
-
-  (* ensure the arrays have at least the given index *)
+@
+  Ensure the arrays have at least the given index.
+<<ml>>=
   let ensureRhsLen p rhsLen =
     Array.length p.sibLinks >= rhsLen &&
     Array.length p.symbols  >= rhsLen
@@ -772,25 +855,34 @@ end = struct
 
   let compare_path glr p1 p2 =
     if p1.startColumn > p2.startColumn then (
-      (* 'p1' spans fewer tokens, so it goes first *)
+@
+      [[p1]] spans fewer tokens, so it goes first.
+<<ml>>=
       -1
     ) else if p2.startColumn > p1.startColumn then (
-      (* same logic *)
+@
+      Same logic.
+<<ml>>=
       1
     ) else (
       let tables = glr.tables in
-      (* equal start columns, compare nonterm ids *)
+@
+      Equal start columns, compare nonterm ids.
+<<ml>>=
       let p1NtIndex = ParseTables.getProdInfo_lhsIndex tables p1.prodIndex in
       let p2NtIndex = ParseTables.getProdInfo_lhsIndex tables p2.prodIndex in
-
-      (* check nonterm order *)
+@
+      Check nonterm order.
+<<ml>>=
       let ord1 = ParseTables.getNontermOrdinal tables p1NtIndex in
       let ord2 = ParseTables.getNontermOrdinal tables p2NtIndex in
 
       ord1 - ord2
     )
 
-
+@
+  Find the link where we want to insert the path.
+<<ml>>=
   let rec search_pos glr p prev =
     match prev.next with
     | Some next when compare_path glr p next < 0 ->
@@ -801,24 +893,30 @@ end = struct
 
   let insert_copy glr src leftEdge =
     let rhsLen = src.rhsLen in
-
-    (* make a new node *)
+@
+    Make a new node.
+<<ml>>=
     let p = create glr src.startStateId src.prodIndex rhsLen in
-
-    (* fill in left edge info *)
+@
+    Fill in left edge info.
+<<ml>>=
     p.leftEdgeNode <- leftEdge;
     p.startColumn  <- leftEdge.column;
-
-    (* copy path info *)
+@
+    Copy path info.
+<<ml>>=
     for i = 0 to rhsLen - 1 do
       p.sibLinks.(i) <- src.sibLinks.(i);
       p.symbols .(i) <- src.symbols .(i);
     done;
-
-    (* find proper place to insert new path *)
+@
+    Find proper place to insert new path.
+<<ml>>=
     match glr.top with
     | None ->
-        (* prepend *)
+@
+        Prepend.
+<<ml>>=
         p.next <- None;
         glr.top <- Some p;
 
@@ -827,15 +925,18 @@ end = struct
           p.next <- glr.top;
           glr.top <- Some p;
         ) else (
-          (* search *)
+@
+          Search.
+<<ml>>=
           let prev = search_pos glr p top in
-
-          (* insert *)
+@
+          Insert.
+<<ml>>=
           p.next <- prev.next;
           prev.next <- Some p;
         )
 
-        
+
   let next path =
     path.next
 
@@ -848,9 +949,9 @@ end = struct
 end
 
 
-(**********************************************************
- * :: Reduction worklist algorithm
- **********************************************************)
+@
+\subsection{Reduction worklist algorithm}
+<<ml>>=
 
 module RWL : sig
 
@@ -871,7 +972,7 @@ module RWL : sig
     -> ParseTables.term_index
     -> Lexing.position
     -> unit
-  
+
   val shiftTerminals
     : 'result glr
     -> ParseTables.term_index
@@ -880,17 +981,18 @@ module RWL : sig
     -> unit
 
 end = struct
-
-  (* add a new parser to the 'active_parsers' list, maintaining
-   * related invariants*)
+@
+  Add a new parser to the [[active_parsers]] list, maintaining
+  related invariants.
+<<ml>>=
   let addTopmostParser glr parsr =
     assert (StackNode.checkLocalInvariants parsr);
 
     Arraystack.push parsr glr.active_parsers;
     StackNode.inc_refcnt parsr
-
-
-  (* same argument meanings as for 'recursiveEnqueue' *)
+@
+  Same argument meanings as for [[recursiveEnqueue]].
+<<ml>>=
   let rec collectPathLink glr proto popsRemaining currentNode mustUseLink linkToAdd =
     proto.sibLinks.(popsRemaining) <- linkToAdd;
     proto.symbols .(popsRemaining) <- StackNode.getNodeSymbol glr currentNode;
@@ -900,12 +1002,15 @@ end = struct
       | Some link when link == linkToAdd ->
           None
       | _ ->
-          (* consume must-use link *)
+@
+          Consume must-use link.
+<<ml>>=
           mustUseLink
     )
 
-
-  (* recursive depth-first enumeration of paths *)
+@
+  Recursive depth-first enumeration of paths.
+<<ml>>=
   and recursiveEnqueue glr
     proto         (* prototype path, with path so far *)
     popsRemaining (* # of links yet to traverse to find a full path *)
@@ -913,21 +1018,28 @@ end = struct
     mustUseLink   (* link the path must use (if not None) *)
   =
     if popsRemaining = 0 then (
-      (* found path *)
+@
+      Found path.
 
-      (* must have used the link *)
+      Must have used the link.
+<<ml>>=
       match mustUseLink with
       | Some _ ->
-          (* do nothing *)
+@
+          Do nothing.
+<<ml>>=
           ()
 
       | None ->
-          (* copy the prototype path, it's the one we want *)
+@
+          Copy the prototype path, it's the one we want.
+<<ml>>=
           Path.insert_copy glr proto currentNode
 
     ) else (
-
-      (* explore currentNode's siblings *)
+@
+      Explore [[currentNode]]'s siblings.
+<<ml>>=
       collectPathLink glr proto (popsRemaining - 1) currentNode mustUseLink currentNode.firstSib;
 
       List.iter (fun sibling ->
@@ -938,43 +1050,55 @@ end = struct
 
   let enqueueReduceAction glr parsr action mustUseLink =
     let prodIndex = ParseTables.decodeReduce glr.tables action parsr.state in
-
-    (* production info *)
+@
+    Production info.
+<<ml>>=
     let rhsLen = ParseTables.getProdInfo_rhsLen glr.tables prodIndex in
     assert (rhsLen >= 0);       (* paranoia *)
-
-    (* make a prototype path; used to control recursion *)
+@
+    Make a prototype path; used to control recursion.
+<<ml>>=
     let proto = Path.create glr parsr.state prodIndex rhsLen in
     assert (Path.ensureRhsLen proto rhsLen);
-
-    (* kick off the recursion *)
+@
+    Kick off the recursion.
+<<ml>>=
     recursiveEnqueue glr proto rhsLen parsr mustUseLink;
-
-    (* deallocate prototype *)
+@
+    Deallocate prototype.
+<<ml>>=
     Path.delete glr proto
-
-
-  (* returns # of actions *)
+@
+  Returns number of actions.
+<<ml>>=
   let rec enqueueReductions glr parsr action mustUseLink =
     assert (StackNode.checkLocalInvariants parsr);
 
     if ParseTables.isShiftAction glr.tables action then (
-      (* do nothing, only looking for reductions *)
+@
+      Do nothing, only looking for reductions.
+<<ml>>=
       1
     ) else if ParseTables.isReduceAction glr.tables action then (
       enqueueReduceAction glr parsr action mustUseLink;
       1
     ) else if ParseTables.isErrorAction glr.tables action then (
-      (* parser just dies *)
+@
+      Parser just dies.
+<<ml>>=
       0
     ) else (
-      (* ambiguous; check for reductions in list of actions *)
+@
+      Ambiguous; check for reductions in list of actions.
+<<ml>>=
       let firstEntry = ParseTables.decodeAmbigAction glr.tables action parsr.state in
       let numEntries = (ParseTables.getAmbigEntry glr.tables firstEntry :> int) in
 
       for i = 1 to numEntries do
         let entry = ParseTables.getAmbigEntry glr.tables (firstEntry + i) in
-        (* ignore return value because I know it will be 1 *)
+@
+        Ignore return value because I know it will be 1.
+<<ml>>=
         ignore (enqueueReductions glr parsr entry mustUseLink);
       done;
 
@@ -983,7 +1107,9 @@ end = struct
 
 
   let findTopmostParser glr state =
-    (* always using the *not* USE_PARSER_INDEX case *)
+@
+    Always using the \textit{not} [[USE_PARSER_INDEX]] case.
+<<ml>>=
     Arraystack.find (fun n -> n.state = state) glr.active_parsers
 
 
@@ -998,57 +1124,64 @@ end = struct
   let shiftActive glr tokType leftSibling rightSibling lhsIndex sval start_p end_p =
     match StackNode.getLinkTo rightSibling leftSibling with
     | Some sibLink ->
-        (* we already have a sibling link, don't need a new one *)
+@
+        We already have a sibling link, don't need a new one.
 
-        (* +--------------------------------------------------+
-         * | it is here that we are bringing the tops of two  |
-         * | alternative parses together (TREEBUILD)          |
-         * +--------------------------------------------------+
-         *)
+        It is here that we are bringing the tops of two.
+        alternative parses together (TREEBUILD).
 
-        (* dead tree optimisation *)
+        Dead tree optimisation.
+<<ml>>=
         if not (canMakeProgress glr tokType rightSibling) then (
           if Options._trace_parse () then
             Printf.printf "avoided a merge by noticing the state was dead\n";
           User.deallocateSemanticValue glr.userAct (StackNode.getNodeSymbol glr rightSibling) sval;
         ) else (
-          (* call user's merge code *)
+@
+          Call user's merge code.
+<<ml>>=
           sibLink.sval <- User.mergeAlternativeParses glr.userAct lhsIndex sibLink.sval sval;
         );
-
-        (* ok, done *)
+@
+        Ok, done.
+<<ml>>=
         None
-
-        (* didn't add a link, no potential for new paths *)
+@
+        Didn't add a link, no potential for new paths.
+<<ml>>=
 
     | None ->
-        (* we get here if there is no suitable sibling link already
-         * existing; so add the link (and keep the ptr for loop below) *)
-        let sibLink = StackNode.addSiblingLink rightSibling leftSibling sval start_p end_p in
+@
+        We get here if there is no suitable sibling link already
+        existing; so add the link (and keep the ptr for loop below).
+<<ml>>=
+        let sibLink =
+          StackNode.addSiblingLink rightSibling leftSibling sval start_p end_p
+        in
+@
+        Adding a new sibling link may have introduced additional opportunities
+        to do reductions from parsers we thought we were finished with.
 
-        (* adding a new sibling link may have introduced additional
-         * opportunities to do reductions from parsers we thought
-         * we were finished with.
-         *
-         * what's more, it's not just the parser ('rightSibling') we
-         * added the link to -- if rightSibling's itemSet contains 'A ->
-         * alpha . B beta' and B ->* empty (so A's itemSet also has 'B
-         * -> .'), then we reduced it (if lookahead ok), so
-         * 'rightSibling' now has another left sibling with 'A -> alpha
-         * B . beta'.  We need to let this sibling re-try its reductions
-         * also.
-         *
-         * so, the strategy is to let all 'finished' parsers re-try
-         * reductions, and process those that actually use the just-
-         * added link *)
+        What's more, it's not just the parser ([[rightSibling]]) we added the
+        link to -- if [[rightSibling]]'s item set contains $A \to \alpha . B
+        \beta$ and $B \to \phi$ (so $A$'s item set also has $B \to .$), then we
+        reduced it (if lookahead okay), so [[rightSibling]] now has another
+        left sibling with $A \to \alpha B . \beta$. We need to let this sibling
+        re-try its reductions also.
 
-        (* we don't have to recompute if nothing else points at
-         * 'rightSibling'; the refct is always at least 1 because we found
-         * it on the "active parsers" worklist *)
+        So, the strategy is to let all 'finished' parsers re-try reductions, and
+        process those that actually use the just-added link.
+
+        we don't have to recompute if nothing else points at
+        [[rightSibling]]; the reference count is always at least 1 because we
+        found it on the "active parsers" worklist.
+<<ml>>=
         if rightSibling.referenceCount > 1 then (
-          (* since we added a new link *all* determinDepths might
-           * be compromised; iterating more than once should be very
-           * rare (and this code path should already be unusual) *)
+@
+          Since we added a new link *all* determinDepths might
+          be compromised; iterating more than once should be very
+          rare (and this code path should already be unusual).
+<<ml>>=
           let changes = ref true in
           let iters   = ref 0 in
 
@@ -1062,34 +1195,46 @@ end = struct
               )
             ) glr.active_parsers;
             incr iters;
-            assert (!iters < 1000);     (* protect against infinite loop *)
+@
+            Protect against infinite loop.
+<<ml>>=
+            assert (!iters < 1000);     
           done
         );
-
-        (* inform the caller that a new sibling link was added *)
+@
+        Inform the caller that a new sibling link was added.
+<<ml>>=
         Some sibLink
 
 
   let shiftNew glr tokType leftSibling rightSiblingState sval start_p end_p =
-    (* not already active parser in this state, so make one *)
+@
+    Not already active parser in this state, so make one.
+<<ml>>=
     let rightSibling = StackNode.make glr rightSiblingState in
-
-    (* add link *)
+@
+    Add link.
+<<ml>>=
     ignore (StackNode.addSiblingLink rightSibling leftSibling sval start_p end_p);
-
-    (* extend frontier *)
+@
+    Extend frontier.
+<<ml>>=
     addTopmostParser glr rightSibling;
-
-    (* enqueue this new parser's reductions *)
+@
+    Enqueue this new parser's reductions.
+<<ml>>=
     let action = ParseTables.getActionEntry glr.tables rightSibling.state tokType in
     ignore (enqueueReductions glr rightSibling action None(*siblink*));
-
-    (* caller doesn't need to do anything more *)
+@
+    Caller doesn't need to do anything more.
+<<ml>>=
     None
 
 
   let shiftNonterminal glr tokType leftSibling lhsIndex sval start_p end_p =
-    (* consult goto table to find where to go upon "shifting" the nonterminal *)
+@
+    Consult goto table to find where to go upon "shifting" the nonterminal.
+<<ml>>=
     let rightSiblingState =
       ParseTables.getGoto glr.tables leftSibling.state lhsIndex
     in
@@ -1101,8 +1246,9 @@ end = struct
         (lhsIndex :> int)
         (User.nonterminalName glr.userAct lhsIndex)
         (rightSiblingState :> int);
-
-    (* is there already an active parser with this state? *)
+@
+    Is there already an active parser with this state?
+<<ml>>=
     match findTopmostParser glr rightSiblingState with
     | Some rightSibling ->
         shiftActive glr tokType leftSibling rightSibling lhsIndex sval start_p end_p
@@ -1112,12 +1258,15 @@ end = struct
 
 
   let rec recursiveProcess glr tokType start_p path =
-    (* info about the production *)
+@
+    Info about the production.
+<<ml>>=
     let rhsLen   = ParseTables.getProdInfo_rhsLen   glr.tables path.prodIndex in
     let lhsIndex = ParseTables.getProdInfo_lhsIndex glr.tables path.prodIndex in
 
     if Options._trace_parse () then
-      Printf.printf "state %d, %s by production %d (rhsLen=%d), back to state %d\n"
+      Printf.printf "state %d, %s by production %d (rhsLen=%d), \
+                     back to state %d\n"
         (path.startStateId :> int)
         (Colour.cyan "reduce")
         path.prodIndex
@@ -1126,18 +1275,24 @@ end = struct
 
     if Options._accounting () then
       glr.stats.nondetReduce <- glr.stats.nondetReduce + 1;
-
-    (* record location of left edge; initially is location of
-     * the lookahead token *)
+@
+    Record location of left edge; initially is location of
+    the lookahead token.
+<<ml>>=
     let leftEdge = ref start_p in
     let rightEdge = ref Lexing.dummy_pos in
-
-    (* before calling the user, duplicate any needed values *)
+@
+    Before calling the user, duplicate any needed values.
+<<ml>>=
     for i = rhsLen - 1 downto 0 do
       let sib = path.sibLinks.(i) in
+@
+      Put a copy of the sval in the array that will be passed to the user.
+<<ml>>=
+      glr.toPass.(i) <-
+        User.duplicateSemanticValue glr.userAct
+          path.symbols.(i) sib.sval;
 
-      (* put a copy of the sval in the array that will be passed to the user *)
-      glr.toPass.(i) <- User.duplicateSemanticValue glr.userAct path.symbols.(i) sib.sval;
       if Options._trace_parse () then
         Printf.printf "toPass[%d] = %s\n" i (Id.get glr.toPass.(i));
 
@@ -1146,36 +1301,55 @@ end = struct
       if !rightEdge == Lexing.dummy_pos && sib.end_p != Lexing.dummy_pos then
         rightEdge := sib.end_p;
     done;
-
-    (* invoke user's reduction action (TREEBUILD) *)
+@
+    Invoke user's reduction action (TREEBUILD).
+<<ml>>=
     begin try
-      let sval = User.reductionAction glr.userAct path.prodIndex glr.toPass !leftEdge !rightEdge in
-      (* did user want to keep? *)
+      let sval =
+        User.reductionAction glr.userAct
+          path.prodIndex glr.toPass !leftEdge !rightEdge
+      in
+@
+      Did user want to keep?
+<<ml>>=
       if not (User.keepNontermValue glr.userAct lhsIndex sval) then
         keep_cancel ();
+
       if Options._trace_parse () then
         Printf.printf "result: %s%s %s\n"
           (User.nonterminalName glr.userAct lhsIndex)
           (Id.get sval)
           (User.showNontermValue glr.userAct lhsIndex sval);
-     
-      (* shift the nonterminal, sval *)
-      let newLink = shiftNonterminal glr tokType path.leftEdgeNode lhsIndex sval !leftEdge !rightEdge in
+@
+      Shift the nonterminal, [[sval]].
+<<ml>>=
+      let newLink =
+        shiftNonterminal glr tokType path.leftEdgeNode lhsIndex sval
+          !leftEdge !rightEdge
+      in
 
       if newLink != None then
-        (* for each 'finished' parser, enqueue actions enabled by the new link *)
+@
+        For each 'finished' parser, enqueue actions enabled by the new link.
+<<ml>>=
         Arraystack.iter (fun parsr ->
-          let action = ParseTables.getActionEntry glr.tables parsr.state tokType in
+          let action =
+            ParseTables.getActionEntry glr.tables
+              parsr.state tokType
+          in
           ignore (enqueueReductions glr parsr action newLink)
         ) glr.active_parsers
 
     with UserActions.Cancel reason ->
-      (* cancelled; drop on floor *)
+@
+      Cancelled; drop on floor.
+<<ml>>=
       ()
     end;
-
-    (* we dequeued it above, and are now done with it, so recycle
-     * it for future use *)
+@
+    We dequeued it above, and are now done with it, so recycle
+    it for future use.
+<<ml>>=
     Path.delete glr path;
 
     match Path.next path with
@@ -1185,25 +1359,39 @@ end = struct
 
   let rec processWorklist glr tokType start_p =
     match Path.detach_queue glr with
-    | None -> ()  (* nothing to do *)
+    | None ->
+@
+        Nothing to do.
+<<ml>>=
+        ()
 
     | Some top ->
-        (* process the enabled reductions in priority order *)
+@
+        Process the enabled reductions in priority order.
+<<ml>>=
         recursiveProcess glr tokType start_p top;
         processWorklist glr tokType start_p
 
 
   let findShift tables tokType action state =
-    (* consult action table, looking for shifts *)
+@
+    Consult action table, looking for shifts.
+<<ml>>=
     if ParseTables.isShiftAction tables action then (
-      (* unambiguous shift *)
+@
+      Unambiguous shift.
+<<ml>>=
       ParseTables.decodeShift tables action tokType
     ) else if ParseTables.isReduceAction tables action
            || ParseTables.isErrorAction tables action then (
-      (* unambiguous reduction or error *)
+@
+      Unambiguous reduction or error.
+<<ml>>=
       ParseTables.invalid_state
     ) else (
-      (* nondeterministic *)
+@
+      Nondeterministic.
+<<ml>>=
       let firstEntry = ParseTables.decodeAmbigAction tables action state in
       let numEntries = (ParseTables.getAmbigEntry tables firstEntry :> int) in
 
@@ -1213,7 +1401,9 @@ end = struct
         let action = ParseTables.getAmbigEntry tables (firstEntry + !i) in
         incr i;
         if ParseTables.isShiftAction tables action then (
-          (* a shift was among the conflicted actions *)
+@
+          A shift was among the conflicted actions.
+<<ml>>=
           newState := ParseTables.decodeShift tables action tokType;
 
           (* "break" *)
@@ -1227,29 +1417,37 @@ end = struct
 
   let shiftTerminals glr tokType tokSval tokSloc =
     glr.globalNodeColumn <- glr.globalNodeColumn + 1;
-
-    (* move all parsers from 'active_parsers' to 'prev_active' *)
+@
+    Move all parsers from [[active_parsers]] to [[prev_active]].
+<<ml>>=
     assert (Arraystack.is_empty glr.prev_active);
     Arraystack.swap glr.prev_active glr.active_parsers;
     assert (Arraystack.is_empty glr.active_parsers);
-
-    (* for token multi-yield.. *)
+@
+    For token multi-yield.
+<<ml>>=
     let prev = ref SiblingLink.null in
 
     Arraystack.iter (fun leftSibling ->
-      (* take the node from 'prev_active'; the refcount transfers
-       * from 'prev_active' to (local variable) 'leftSibling' *)
+@
+      Take the node from [[prev_active]]; the refcount transfers
+      from [[prev_active]] to (local variable) [[leftSibling]].
+<<ml>>=
       assert (leftSibling.referenceCount >= 1);   (* for the local *)
       let state = leftSibling.state in
-
-      (* can this parser shift? *)
+@
+      Can this parser shift?
+<<ml>>=
       let action = ParseTables.getActionEntry glr.tables state tokType in
-
-      (* if we find a shift, this will be set to something valid *)
+@
+      If we find a shift, this will be set to something valid.
+<<ml>>=
       let newState = findShift glr.tables tokType action state in
 
       if newState <> ParseTables.invalid_state then (
-        (* found a shift *)
+@
+        Found a shift.
+<<ml>>=
 
         if Options._accounting () then
           glr.stats.nondetShift <- glr.stats.nondetShift + 1;
@@ -1260,49 +1458,69 @@ end = struct
             (Colour.cyan "shift")
             (User.terminalName glr.userAct tokType)
             (newState :> int);
-
-        (* already a parser in this state? *)
+@
+        Already a parser in this state?
+<<ml>>=
         let rightSibling =
           match findTopmostParser glr newState with
           | Some rs ->
-              (* use existing *)
+@
+              Use existing.
+<<ml>>=
               rs
           | None ->
-              (* must make a new stack node *)
+@
+              Must make a new stack node.
+<<ml>>=
               let rs = StackNode.make glr newState in
-              (* add it to active parsers *)
+@
+              Add it to active parsers.
+<<ml>>=
               addTopmostParser glr rs;
-              (* use new *)
+@
+              Use new.
+<<ml>>=
               rs
         in
-
-        (* semantic value for this token *)
+@
+        Semantic value for this token.
+<<ml>>=
         prev :=
           if !prev == SiblingLink.null then (
-              (* usual case *)
+@
+              Usual case.
+<<ml>>=
               StackNode.addSiblingLink rightSibling leftSibling
                 tokSval (fst tokSloc) (snd tokSloc)
 
           ) else (
-              (* the 'sval' we just grabbed has already been claimed by
-               * 'prev.sval'; get a fresh one by duplicating the latter *)
-              let sval = User.duplicateTerminalValue glr.userAct tokType !prev.sval in
-
-              (* add sibling link now *)
+@
+              The [[sval]] we just grabbed has already been claimed by
+              [[prev.sval]]; get a fresh one by duplicating the latter.
+<<ml>>=
+              let sval =
+                User.duplicateTerminalValue glr.userAct
+                  tokType !prev.sval
+              in
+@
+              Add sibling link now.
+<<ml>>=
               StackNode.addSiblingLink rightSibling leftSibling
                 sval !prev.start_p !prev.end_p
           );
-
-        (* adding this sibling link cannot violate the determinDepth
-         * invariant of some other node, because all of the nodes created
-         * or added-to during shifting do not have anything pointing at
-         * them, so in particular nothing points to 'rightSibling'; a simple
-         * check of this is to check the reference count and verify it is 1,
-         * the 1 being for the 'active_parsers' list it is on *)
+@
+        Adding this sibling link cannot violate the [[determinDepth]]
+        invariant of some other node, because all of the nodes created
+        or added-to during shifting do not have anything pointing at
+        them, so in particular nothing points to [[rightSibling]]; a simple
+        check of this is to check the reference count and verify it is 1,
+        the 1 being for the [[active_parsers]] list it is on.
+<<ml>>=
         assert (rightSibling.referenceCount = 1);
       );
-
-      (* pending decrement of leftSibling, which is about to go out of scope *)
+@
+      Pending decrement of [[leftSibling]], which is about to go out of scope.
+<<ml>>=
       StackNode.dec_refcnt glr leftSibling;
     ) glr.prev_active;
 
@@ -1310,10 +1528,9 @@ end = struct
 
 end
 
-
-(**********************************************************
- * :: Common to GLR and LR Parser cores
- **********************************************************)
+@
+\subsection{Common to GLR and LR Parser cores}
+<<ml>>=
 
 module type ParserCore = sig
 
@@ -1334,10 +1551,13 @@ let parse_error ?reason glr tokType tokSloc lastToDie =
       ParseTables.iter_terms glr.tables (fun i ->
         let act = ParseTables.getActionEntry glr.tables lastToDie i in
         if not (ParseTables.isErrorAction glr.tables act) then
-          Printf.printf "  [%d] %s\n" (i :> int) (User.terminalName glr.userAct i);
+          Printf.printf "  [%d] %s\n"
+            (i :> int)
+            (User.terminalName glr.userAct i);
       )
     ) else (
-      Printf.printf "(expected-token info not available due to nondeterministic mode)\n"
+      Printf.printf "(expected-token info not available due \
+                     to nondeterministic mode)\n"
     );
 
     Printf.printf (*loc*) "Parse error (state %d) at %s\n"
@@ -1349,19 +1569,22 @@ let parse_error ?reason glr tokType tokSloc lastToDie =
         Printf.printf "Last reduction was cancelled because: %s\n" reason
   );
 
-  raise (Located (tokSloc, ParseError (lastToDie, tokType), User.terminalName glr.userAct tokType))
+  raise (Located (tokSloc,
+    ParseError (lastToDie, tokType),
+    User.terminalName glr.userAct tokType
+  ))
 
-
-(**********************************************************
- * :: Non-deterministic parser core
- **********************************************************)
+@
+\subsection{Non-deterministic parser core}
+<<ml>>=
 
 module GLR : ParserCore = struct
 
   let nondeterministicParseToken glr tokType tokSval tokSloc =
     let lastToDie = ref ParseTables.invalid_state in
-
-    (* seed the reduction worklist by analysing the top nodes *)
+@
+    Seed the reduction worklist by analysing the top nodes.
+<<ml>>=
     Arraystack.iter (fun parsr ->
       let action = ParseTables.getActionEntry glr.tables parsr.state tokType in
       let actions = RWL.enqueueReductions glr parsr action None(*sibLink*) in
@@ -1373,36 +1596,39 @@ module GLR : ParserCore = struct
         lastToDie := parsr.state
       )
     ) glr.active_parsers;
-
-    (* drop into worklist processing loop *)
+@
+    Drop into worklist processing loop.
+<<ml>>=
     RWL.processWorklist glr tokType (fst tokSloc);
-
-    (* do all shifts last *)
+@
+    Do all shifts last.
+<<ml>>=
     RWL.shiftTerminals glr tokType tokSval tokSloc;
-
-    (* error? *)
+@
+    Error?
+<<ml>>=
     if Arraystack.is_empty glr.active_parsers then
       parse_error glr tokType tokSloc !lastToDie
-
-
-  (* pulled out so I can use this block of statements in several places *)
+@
+  Pulled out so I can use this block of statements in several places.
+<<ml>>=
   let parseToken glr tokType tokSval tokSloc =
     let open Lexerint in
-
-    (* raises ParseError on failure *)
+@
+    Raises [[ParseError]] on failure.
+<<ml>>=
     nondeterministicParseToken glr tokType tokSval tokSloc;
-
-    (* goto label: getNextToken *)
-    (* last token? *)
+@
+    Last token?
+<<ml>>=
     if tokType = ParseTables.eof_term then
       raise End_of_file       (* "break" *)
 
 end
 
-
-(**********************************************************
- * :: Mini-LR core
- **********************************************************)
+@
+\subsection{Mini-LR core}
+<<ml>>=
 
 module LR : ParserCore = struct
 
@@ -1410,11 +1636,20 @@ module LR : ParserCore = struct
     let parsr = ref (Arraystack.top glr.active_parsers) in
     assert (!parsr.referenceCount = 1);
 
-    let action = ParseTables.getActionEntry_noError glr.tables !parsr.state tokType in
+    let action =
+      ParseTables.getActionEntry_noError
+        glr.tables !parsr.state tokType
+    in
 
     if ParseTables.isReduceAction glr.tables action then (
-      (* can reduce unambiguously *)
-      let prodIndex = ParseTables.decodeReduce glr.tables action !parsr.state in
+@
+      Can reduce unambiguously.
+<<ml>>=
+      let prodIndex =
+        ParseTables.decodeReduce
+          glr.tables action !parsr.state
+      in
+
       if Options._accounting () then
         glr.stats.detReduce <- glr.stats.detReduce + 1;
 
@@ -1429,67 +1664,84 @@ module LR : ParserCore = struct
         let rightEdge = ref Lexing.dummy_pos in
 
         assert (rhsLen <= Array.length glr.toPass);
+@
+        Loop for arbitrary [[rhsLen]].
 
-        (* --- loop for arbitrary rhsLen ---
-         * pop off 'rhsLen' stack nodes, collecting as many semantic
-         * values into 'toPass'
-         * NOTE: this loop is the innermost inner loop of the entire
-         * parser engine -- even *one* branch inside the loop body
-         * costs about 30% end-to-end performance loss! *)
+        Pop off [[rhsLen]] stack nodes, collecting as many semantic
+        values into [[toPass]].
+
+        NOTE: This loop is the innermost inner loop of the entire
+        parser engine -- even \textit{one} branch inside the loop body
+        costs about 30\% end-to-end performance loss!
+<<ml>>=
         for i = rhsLen - 1 downto 0 do
-          (* grab the (only) sibling of 'parsr' *)
+@
+          Grab the (only) sibling of [[parsr]].
+<<ml>>=
           let sib = !parsr.firstSib in
-
-          (* Store its semantic value it into array that will be
-           * passed to user's routine.  Note that there is no need to
-           * dup() this value, since it will never be passed to
-           * another action routine (avoiding that overhead is
-           * another advantage to the LR mode). *)
+@
+          Store its semantic value it into array that will be
+          passed to user's routine.  Note that there is no need to
+          [[dup()]] this value, since it will never be passed to
+          another action routine (avoiding that overhead is
+          another advantage to the LR mode).
+<<ml>>=
           glr.toPass.(i) <- sib.sval;
           if Options._trace_parse () then
             Printf.printf "toPass[%d] = %s\n" i (Id.get glr.toPass.(i));
-
-          (* if it has a valid source location, grab it *)
+@
+          If it has a valid source location, grab it.
+<<ml>>=
           if sib.start_p != Lexing.dummy_pos then
             leftEdge := sib.start_p;
           if !rightEdge == Lexing.dummy_pos && sib.end_p != Lexing.dummy_pos then
             rightEdge := sib.end_p;
-
-          (* pop 'parsr' and move to next one *)
+@
+          Pop [[parsr]] and move to next one.
+<<ml>>=
           Objpool.dealloc glr.stackNodePool !parsr;
           let prev = !parsr in
           parsr := sib.sib;
 
           assert (!parsr.referenceCount = 1);
           assert (prev.referenceCount = 1);
-
-          (* adjust a couple things about 'prev' reflecting
-           * that it has been deallocated *)
+@
+          Adjust a couple things about [[prev]] reflecting
+          that it has been deallocated.
+<<ml>>=
           if Options._accounting () then (
-            glr.stats.numStackNodesAllocd <- glr.stats.numStackNodesAllocd - 1;
+            glr.stats.numStackNodes <- glr.stats.numStackNodes - 1;
           );
           prev.firstSib.sib <- StackNode.null;
 
           assert (!parsr.referenceCount = 1);
         done;
-
-        (* now, do an abbreviated 'glrShiftNonterminal' *)
+@
+        Now, do an abbreviated [[glrShiftNonterminal]].
+<<ml>>=
         let newState = ParseTables.getGoto glr.tables !parsr.state lhsIndex in
 
         if Options._trace_parse () then
-          Printf.printf "state %d, (unambig) %s by %d (len=%d), back to %d then out to %d\n"
+          Printf.printf "state %d, (unambig) %s by %d (len=%d), \
+                         back to %d then out to %d\n"
             (startStateId :> int)
             (Colour.cyan "reduce")
             prodIndex
             rhsLen
             (!parsr.state :> int)
             (newState :> int);
-
-        (* call the user's action function (TREEBUILD) *)
+@
+        Call the user's action function (TREEBUILD).
+<<ml>>=
         let sval =
           try
-            let sval = User.reductionAction glr.userAct prodIndex glr.toPass !leftEdge !rightEdge in
-            (* does the user want to keep it? *)
+            let sval =
+              User.reductionAction glr.userAct prodIndex glr.toPass
+                !leftEdge !rightEdge
+            in
+@
+            Does the user want to keep it?
+<<ml>>=
             if not (User.keepNontermValue glr.userAct lhsIndex sval) then
               keep_cancel ();
             if Options._trace_parse () then
@@ -1501,33 +1753,42 @@ module LR : ParserCore = struct
           with UserActions.Cancel reason ->
             parse_error ~reason glr tokType tokSloc newState
         in
-
-        (* the sole reference is the 'parsr' variable *)
+@
+        The sole reference is the [[parsr]] variable.
+<<ml>>=
         assert (!parsr.referenceCount = 1);
-
-        (* push new state *)
+@
+        Push new state.
+<<ml>>=
         let newNode = StackNode.make glr newState in
 
-        StackNode.addFirstSiblingLink_no_refcnt newNode !parsr sval !leftEdge !rightEdge;
+        StackNode.addFirstSiblingLink_no_refcnt newNode !parsr sval
+          !leftEdge !rightEdge;
 
         assert (!parsr.referenceCount = 1);
-
-        (* replace old topmost parser with 'newNode' *)
+@
+        Replace old topmost parser with [[newNode]].
+<<ml>>=
         assert (Arraystack.length glr.active_parsers = 1);
         Arraystack.set glr.active_parsers 0 newNode;
         StackNode.inc_refcnt newNode;
         assert (newNode.referenceCount = 1);
-
-        (* we have not shifted a token, so again try to use
-         * the deterministic core *)
+@
+        We have not shifted a token, so again try to use
+        the deterministic core.
+<<ml>>=
         parseToken glr tokType tokSval tokSloc
       ) else (
-        (* deterministic depth insufficient: use GLR *)
+@
+        Deterministic depth insufficient: use GLR.
+<<ml>>=
         GLR.parseToken glr tokType tokSval tokSloc
       )
 
     ) else if ParseTables.isShiftAction glr.tables action then (
-      (* can shift unambiguously *)
+@
+      Can shift unambiguously.
+<<ml>>=
       let newState = ParseTables.decodeShift glr.tables action tokType in
       if Options._accounting () then
         glr.stats.detShift <- glr.stats.detShift + 1;
@@ -1543,9 +1804,11 @@ module LR : ParserCore = struct
 
       let rightSibling = StackNode.make glr newState in
 
-      StackNode.addFirstSiblingLink_no_refcnt rightSibling !parsr tokSval (fst tokSloc) (snd tokSloc);
-
-      (* replace 'parsr' with 'rightSibling' *)
+      StackNode.addFirstSiblingLink_no_refcnt rightSibling !parsr
+        tokSval (fst tokSloc) (snd tokSloc);
+@
+      Replace [[parsr]] with [[rightSibling]].
+<<ml>>=
       assert (Arraystack.length glr.active_parsers = 1);
       Arraystack.set glr.active_parsers 0 rightSibling;
 
@@ -1553,24 +1816,24 @@ module LR : ParserCore = struct
       assert (rightSibling.referenceCount = 0);
 
       rightSibling.referenceCount <- 1;
-
-      (* get next token *)
-      (* "goto getNextToken;" *)
-      (* last token? *)
+@
+      Last token?
+<<ml>>=
       if tokType = ParseTables.eof_term then
         raise End_of_file       (* "break" *)
 
     ) else (
-      (* error or ambig; not deterministic *)
+@
+      Error or ambig; not deterministic.
+<<ml>>=
       GLR.parseToken glr tokType tokSval tokSloc
     )
 
 end
 
-
-(**********************************************************
- * :: Debugging and tracing
- **********************************************************)
+@
+\subsection{Debugging and tracing}
+<<ml>>=
 
 let nodeSummary node =
   Printf.sprintf "%d[%d]" (node.state :> int) node.referenceCount
@@ -1578,31 +1841,36 @@ let nodeSummary node =
 
 let rec innerStackSummary printed node =
   if List.memq node !printed then (
-
-    (* already printed *)
+@
+    Already printed.
+<<ml>>=
     "(rep:" ^ nodeSummary node ^ ")"
 
   ) else (
-
-    (* remember that we've now printed 'node' *)
+@
+    Remember that we've now printed [[node]].
+<<ml>>=
     printed := node :: !printed;
 
     if StackNode.hasZeroSiblings node then (
-
-      (* no siblings *)
+@
+      No siblings.
+<<ml>>=
       nodeSummary node
 
     ) else if StackNode.hasOneSibling node then (
-
-      (* one sibling *)
+@
+      One sibling.
+<<ml>>=
       nodeSummary node ^ "-" ^
       innerStackSummary printed node.firstSib.sib
 
     ) else (
+@
+      Multiple siblings.
 
-      (* multiple siblings *)
-
-      (* force order of eval *)
+      Force order of eval.
+<<ml>>=
       let nodeSummary = nodeSummary node in
       let firstSummary = innerStackSummary printed node.firstSib.sib in
       let siblingsSummary =
@@ -1616,16 +1884,23 @@ let rec innerStackSummary printed node =
     )
   )
 
-
+@
+Print stack contents summary.
+<<ml>>=
 let stackSummary glr =
-  (* nodes already printed *)
+@
+  Nodes already printed.
+<<ml>>=
   let printed = ref [] in
-
-  (* loop/fold *)
+@
+  Loop/fold.
+<<ml>>=
   let len = Arraystack.length glr.active_parsers in
   let rec loop acc i =
     if i > len - 1 then
-      (* done *)
+@
+      Done.
+<<ml>>=
       acc
     else
       let n = Arraystack.nth glr.active_parsers i in
@@ -1639,15 +1914,14 @@ let stackSummary glr =
 
   loop "" 0
 
+@
+\subsection{Main parser loop}
 
-(**********************************************************
- * :: Main parser loop
- **********************************************************)
+This function is the core of the parser, and its performance is critical to the
+end-to-end performance of the whole system. It does not actually return, but it
+has the same return type as the main entry point.
+<<ml>>=
 
-(* This function is the core of the parser, and its performance is
- * critical to the end-to-end performance of the whole system.
- * It does not actually return, but it has the same return type as
- * the main entry point. *)
 let rec main_loop (glr : 'result glr) lexer token : 'result =
   if Options._trace_parse () then (
     let open Lexerint in
@@ -1658,41 +1932,52 @@ let rec main_loop (glr : 'result glr) lexer token : 'result =
       (Arraystack.length glr.active_parsers);
     Printf.printf "Stack:%s\n" (stackSummary glr);
   );
-
-  (* classify and decompose current token *)
-  let tokType, tokSval, tokSloc = User.reclassifyToken glr.userAct lexer token in
+@
+  Classify and decompose current token.
+<<ml>>=
+  let tokType, tokSval, tokSloc =
+    User.reclassifyToken glr.userAct lexer token
+  in
 
   begin try
     if Options._use_mini_lr () && Arraystack.length glr.active_parsers = 1 then
-      (* try deterministic parsing *)
+@
+      Try deterministic parsing.
+<<ml>>=
       LR.parseToken glr tokType tokSval tokSloc
     else
-      (* mini lr core disabled, use full GLR *)
+@
+      Mini LR core disabled, use full GLR.
+<<ml>>=
       GLR.parseToken glr tokType tokSval tokSloc;
   with
   | Located _
   | End_of_file as e ->
-      (* propagate internal exceptions and ones
-       * already wrapped in Located *)
+@
+      Propagate internal exceptions and ones
+      already wrapped in [[Located]].
+<<ml>>=
       raise e
   | e ->
       raise (Located (tokSloc, e, Printexc.get_backtrace ()))
   end;
-
-  (* parse next token *)
+@
+  Parse next token.
+<<ml>>=
   main_loop glr lexer Lexerint.(lexer.token ())
 
+@
+\subsection{Entry and exit of GLR parser}
 
-(**********************************************************
- * :: Entry and exit of GLR parser
- **********************************************************)
+Used to extract the svals from the nodes just under the start symbol reduction.
+<<ml>>=
 
-(* used to extract the svals from the nodes just under the
- * start symbol reduction *)
 let grabTopSval glr node =
   let sib = StackNode.getUniqueLink node in
   let ret = sib.sval in
-  sib.sval <- User.duplicateSemanticValue glr.userAct (StackNode.getNodeSymbol glr node) sib.sval;
+  sib.sval <-
+    User.duplicateSemanticValue glr.userAct
+      (StackNode.getNodeSymbol glr node) sib.sval;
 
   (* TRSACTION("dup'd " << ret << " for top sval, yielded " << sib->sval); *)
 
@@ -1706,34 +1991,46 @@ let cleanupAfterParse (glr : 'result glr) : 'result =
   if not (Arraystack.length glr.active_parsers = 1) then (
     Printf.printf "parsing finished with %d active parsers!\n"
       (Arraystack.length glr.active_parsers);
-    raise (ParseError (ParseTables.invalid_state, ParseTables.invalid_term))
+    raise (ParseError (
+      ParseTables.invalid_state,
+      ParseTables.invalid_term
+    ))
   ) else (
     let last = Arraystack.top glr.active_parsers in
-
-    (* prepare to run final action *)
+@
+    Prepare to run final action.
+<<ml>>=
     let arr =
       Array.init 2 (function
         | 0 ->
             let nextToLast = (StackNode.getUniqueLink last).sib in
-            (* sval we want *)
+@
+            Semantic value we want:
+<<ml>>=
             grabTopSval glr nextToLast
         | 1 ->
-            (* EOF's sval *)
+@
+            [[EOF]]'s sval:
+<<ml>>=
             grabTopSval glr last
         | _ -> assert false
       )
     in
-
-    (* reduce *)
-    let finalProductionIndex = ParseTables.getFinalProductionIndex glr.tables in
+@
+    Reduce.
+<<ml>>=
+    let finalProductionIndex =
+      ParseTables.getFinalProductionIndex glr.tables
+    in
     let treeTop =
       SemanticValue.obj (
         User.reductionAction glr.userAct finalProductionIndex arr
           Lexing.dummy_pos Lexing.dummy_pos
       )
     in
-
-    (* before pool goes away.. *)
+@
+    Before pool goes away..
+<<ml>>=
     Arraystack.iter (StackNode.dec_refcnt glr) glr.active_parsers;
 
     treeTop
@@ -1754,22 +2051,24 @@ let parse (glr : 'result glr) lexer : 'result =
 
   if Options._trace_parse () then
     Printf.printf "==== starting parse ====\n";
-
-  (* main parsing loop; this function never returns normally *)
+@
+  Main parsing loop; this function never returns normally.
+<<ml>>=
   try
-
-    (* get first token and start parsing *)
+@
+    Get first token and start parsing.
+<<ml>>=
     main_loop glr lexer Lexerint.(lexer.token ())
 
   with End_of_file ->
-
-    (* end of parse *)
+@
+    End of parse.
+<<ml>>=
     cleanupAfterParse glr
 
-
-(**********************************************************
- * :: Creating the GLR parser object
- **********************************************************)
+@
+\subsection{Creating the GLR parser object}
+<<ml>>=
 
 let makePath maxRhsLen () = {
   sibLinks     = Array.make maxRhsLen SiblingLink.null;
@@ -1803,19 +2102,19 @@ let create userAct tables =
     stackNodePool       = Objpool.make StackNode.create;
     globalNodeColumn    = 0;
     stats = {
-      numStackNodesAllocd = 0;
-      maxStackNodesAllocd = 0;
-      detShift            = 0;
-      detReduce           = 0;
-      nondetShift         = 0;
-      nondetReduce        = 0;
+      numStackNodes = 0;
+      maxStackNodes = 0;
+      detShift      = 0;
+      detReduce     = 0;
+      nondetShift   = 0;
+      nondetReduce  = 0;
     };
   }
 
 
 let stats glr = {
-  num_stack_nodes	= glr.stats.numStackNodesAllocd;
-  max_stack_nodes	= glr.stats.maxStackNodesAllocd;
+  num_stack_nodes	= glr.stats.numStackNodes;
+  max_stack_nodes	= glr.stats.maxStackNodes;
   det_shift		= glr.stats.detShift;
   det_reduce		= glr.stats.detReduce;
   nondet_shift		= glr.stats.nondetShift;
