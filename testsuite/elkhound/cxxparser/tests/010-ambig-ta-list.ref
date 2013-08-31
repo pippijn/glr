@@ -1,17 +1,16 @@
 ---- result ----
 __EarlyStartSymbol -> File TOK_EOF
- File -> TemplateArgumentList
-  ------------- ambiguous TemplateArgumentList: 1 of 2 ------------
-   TemplateArgumentList -> TypeId
-    TypeId -> TOK_NAME
-     TOK_NAME
-  ------------- ambiguous TemplateArgumentList: 2 of 2 ------------
-   TemplateArgumentList -> BinaryExpression
-    BinaryExpression -> PrimaryExpression
-     PrimaryExpression -> Name
-      Name -> TOK_NAME
+ File -> TemplateArgument
+  ------------- ambiguous TemplateArgument: 1 of 2 ------------
+   TemplateArgument -> TOK_NAME
+    TOK_NAME
+  ------------- ambiguous TemplateArgument: 2 of 2 ------------
+   TemplateArgument -> NameEnd
+    NameEnd -> NameMiddle
+     NameMiddle -> NameStart
+      NameStart -> TOK_NAME
        TOK_NAME
-  ----------- end of ambiguous TemplateArgumentList -----------
+  ----------- end of ambiguous TemplateArgument -----------
  TOK_EOF
 ---- result ----
 (Type 1:1-1:6 FOOBAR)

@@ -7,16 +7,16 @@ terminals {
 }
 
 
-nonterm(string) File		-> t:TemplateArgumentList;
+nonterm(string) File	-> t:TemplateArgument;
 
-nonterm Name			-> id:TOK_NAME;
-nonterm TypeId			-> id:TOK_NAME;
-nonterm PrimaryExpression	-> id:Name;
-nonterm BinaryExpression	-> e:PrimaryExpression;
+(* Bug: 3 levels break the parser, 2 levels work fine. *)
+nonterm NameStart	-> id:TOK_NAME;
+nonterm NameMiddle	-> id:NameStart;
+nonterm NameEnd		-> id:NameMiddle;
 
-nonterm TemplateArgumentList {
+nonterm TemplateArgument {
   fun merge(l,r) { "Merge(" ^ l ^ "," ^ r ^ ")" }
 
-  -> id:TypeId			[Type];
-  -> id:BinaryExpression	[NonType];
+  -> id:TOK_NAME	[Type];
+  -> id:NameEnd		[NonType];
 }
