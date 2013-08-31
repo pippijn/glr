@@ -21,7 +21,7 @@ type functions = {
 }
 
 let default_dup      (names : string array) (sym : int) (sval : SemanticValue.t) : SemanticValue.t =
-  if PtreeOptions._dup_copies () then
+  if PtreeOptions._dup_clone () then
     let serialised = Marshal.(to_string sval [No_sharing]) in
     Marshal.(from_string serialised 0)
   else
