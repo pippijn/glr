@@ -54,6 +54,26 @@ let final_semtype variant nonterms final_prod =
  * :: User actions
  ************************************************)
 
+let make_binding variant tag rhs_index sym =
+  let semtype = semtype variant sym in
+  let polytype = polytype sym in
+
+  let _loc, tag = Sloc._loc tag in
+
+  if semtype = polytype then
+    <:binding<
+      $lid:tag$ : $semtype$ =
+        (SemanticValue.obj svals.($`int:rhs_index$))
+    >>
+  else
+    <:binding<
+      (* explicitly state polymorphic type variable so the typing
+       * stays sound even when users specify types *)
+      $lid:tag$ : $semtype$ =
+        (SemanticValue.obj svals.($`int:rhs_index$) : $polytype$)
+    >>
+
+
 (* ------------------- actions ------------------ *)
 let make_ml_actions variant index =
   (* iterate over productions, emitting action function closures *)
@@ -64,26 +84,6 @@ let make_ml_actions variant index =
 	Printf.printf "(*%a *)\n"
 	  (PrintGrammar.print_production index.terms index.nonterms) prod
       );
-
-      let make_binding tag rhs_index sym =
-	let semtype = semtype variant sym in
-	let polytype = polytype sym in
-
-	let _loc, tag = Sloc._loc tag in
-
-	if semtype = polytype then
-	  <:binding<
-	    $lid:tag$ : $semtype$ =
-	      (SemanticValue.obj svals.($`int:rhs_index$))
-	  >>
-	else
-	  <:binding<
-	    (* explicitly state polymorphic type variable so the typing
-	     * stays sound even when users specify types *)
-	    $lid:tag$ : $semtype$ =
-	      (SemanticValue.obj svals.($`int:rhs_index$) : $polytype$)
-	  >>
-      in
 
       (* iterate over RHS elements, emitting bindings for each with a tag *)
       let bindings =
@@ -96,11 +96,11 @@ let make_ml_actions variant index =
 
 	  | Terminal (Some tag, term) ->
 	      let term = TermArray.get index.terms term in
-	      [make_binding tag rhs_index term.tbase]
+	      [make_binding variant tag rhs_index term.tbase]
 
 	  | Nonterminal (Some tag, nonterm) ->
 	      let nonterm = NtArray.get index.nonterms nonterm in
-	      [make_binding tag rhs_index nonterm.nbase]
+	      [make_binding variant tag rhs_index nonterm.nbase]
 	) prod.right
 	|> List.concat
       in
@@ -158,7 +158,7 @@ let make_ml_actions variant index =
   <:rec_binding<reductionActionArray = [| $closures$ |]>>
 
 
-let make_ml_spec_func default semtype rettype kind func id =
+let make_ml_spec_func default semtype polytype rettype kind func id =
   match func with
   | None ->
       let _loc = ghost 166 in
@@ -180,12 +180,29 @@ let make_ml_spec_func default semtype rettype kind func id =
 	) params
       in
 
+      let make_binding =
+        if semtype = polytype then
+          fun _loc tag ->
+            <:binding<
+              $lid:tag$ : $semtype$ =
+                SemanticValue.obj $lid:"_" ^ tag$
+            >>
+        else
+          fun _loc tag ->
+            <:binding<
+            (* explicitly state polymorphic type variable so the typing
+             * stays sound even when users specify types *)
+              $lid:tag$ : $semtype$ =
+                (SemanticValue.obj $lid:"_" ^ tag$ : $polytype$)
+            >>
+      in
+
       let bindings =
 	let _loc = ghost 186 in
 	<:binding<__result : $rettype$ = $code$>>
 	:: List.map (fun param ->
 	  let _loc, param = Sloc._loc param in
-	  <:binding<($lid:param$ : $semtype$) = SemanticValue.obj $lid:"_" ^ param$>>
+          make_binding _loc param
 	) params
       in
 
@@ -224,8 +241,9 @@ let make_spec_func_closures variant name rettype kind base func syms =
   if BatArray.exists (fun sym -> func variant sym != None) syms then
     Array.mapi (fun i sym ->
       let paramtype = semtype variant (base sym) in
+      let polytype = polytype (base sym) in
       let rettype = BatOption.default paramtype rettype in
-      make_ml_spec_func default paramtype rettype kind (func variant sym) i
+      make_ml_spec_func default paramtype polytype rettype kind (func variant sym) i
     ) syms
     |> array_expr_of_array
   else
