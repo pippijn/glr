@@ -1,26 +1,14 @@
 terminals {
-  include("ccTerminals.ids")
-  
-  token(string) TOK_INT_LITERAL;
-  token(string) TOK_FLOAT_LITERAL;
-  token(string) TOK_CHAR_LITERAL;
-  token(string) TOK_STRING_LITERAL;
+  0 : TOK_EOF	"<EOF>";
+  1 : TOK_COMMA	",";
+  2 : TOK_NAME;
 
   token(string) TOK_NAME;
-  token(string) TOK_TYPE_NAME;
-  token(string) TOK_VARIABLE_NAME;
-
-  token(string) TOK_ANNOTATION;
 }
 
 
 nonterm(unit) File {
   -> t:TemplateArgumentList				{}
-}
-
-
-nonterm Identifier {
-  -> n:TOK_NAME						{}
 }
 
 
@@ -32,8 +20,14 @@ nonterm PrimaryExpression {
 nonterm UnqualifiedId {
   fun merge(l,r) {}
 
-  -> id:Identifier	[Name]				{}
-  -> id:TemplateId	[Template]			{}
+  -> id:TOK_NAME	[Name]				{}
+}
+
+
+nonterm TypeId {
+  fun merge(l,r) {}
+
+  -> n:TOK_NAME	[Id]					{}
 }
 
 
@@ -42,22 +36,8 @@ nonterm BinaryExpression {
 }
 
 
-nonterm TypeId {
-  fun merge(l,r) {}
-
-  -> n:Identifier	[Id]				{}
-  -> id:TemplateId	[TemplateId]			{}
-}
-
-
 nonterm TemplateArgumentListOpt {
   -> list:TemplateArgumentList				{}
-}
-
-
-nonterm TemplateId {
-  -> n:Identifier "<" list:TemplateArgumentListOpt ">"
-	[TemplateId]					{}
 }
 
 

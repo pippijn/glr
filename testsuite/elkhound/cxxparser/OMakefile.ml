@@ -8,16 +8,12 @@ install Program ".DEFAULT" [
   Modules [
     "Cc";
     "CcLexer";
-    "Cc_keywords";
-    "Options";
   ];
 
   (* Library dependencies *)
   OCamlRequires [
     "glr";
   ];
-
-  Code "ccParser.ml: ccTerminals.ids";
 
   Parser (Elkhound, "cc");
 ]

@@ -3,17 +3,15 @@ __EarlyStartSymbol -> File TOK_EOF
  File -> TemplateArgumentList
   ------------- ambiguous TemplateArgumentList: 1 of 2 ------------
    TemplateArgumentList -> TypeId TemplateArgumentListContinuation
-    TypeId -> Identifier
-     Identifier -> TOK_NAME
-      TOK_NAME
+    TypeId -> TOK_NAME
+     TOK_NAME
     TemplateArgumentListContinuation
   ------------- ambiguous TemplateArgumentList: 2 of 2 ------------
    TemplateArgumentList -> BinaryExpression TemplateArgumentListContinuation
     BinaryExpression -> PrimaryExpression
      PrimaryExpression -> UnqualifiedId
-      UnqualifiedId -> Identifier
-       Identifier -> TOK_NAME
-        TOK_NAME
+      UnqualifiedId -> TOK_NAME
+       TOK_NAME
     TemplateArgumentListContinuation
   ----------- end of ambiguous TemplateArgumentList -----------
  TOK_EOF
