@@ -338,9 +338,9 @@ module User = struct
     assert (sym <> ParseTables.cSYMBOL_INVALID);
 
     let copy =
-      (* the C++ implementation checks for NULL sval, but I don't think
-       * that can be here in the ML version, and I'm not convinced the
-       * check would even be safe *)
+      (* The C++ implementation checks for NULL sval, but that doesn't
+       * make sense in the ML version, as a zero value for an sval is
+       * perfectly safe and should be allowed. *)
       if ParseTables.symIsTerm sym then
         duplicateTerminalValue userAct (ParseTables.symAsTerm sym) sval
       else
