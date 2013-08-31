@@ -50,153 +50,84 @@ terminals {
 }
 
 
-nonterm(int) File {
+nonterm(unit) File {
   -> t:TemplateArgumentList;
 }
 
 
-
-
 nonterm Identifier {
-  -> n:TOK_NAME;
+  -> n:TOK_NAME {}
 }
-
-
-nonterm TypeName {
-  -> n:TOK_TYPE_NAME;
-}
-
-
-
-
 
 
 nonterm PrimaryExpression {
-  -> e:IdExpression
-	[Variable] {0}
-}
-
-nonterm IdExpression {
-  fun merge(l,r) {0}
+  fun merge(l,r) {}
 
   -> id:UnqualifiedId
 	[Id];
 }
 
-
 nonterm UnqualifiedId {
-  fun merge(l,r) {0}
+  fun merge(l,r) {}
 
-  -> id:Identifier			[Name]		{0}
+  -> id:Identifier			[Name];
 
   -> id:TemplateId			[Template];
 }
 
 
-nonterm BinExp_mid {
+nonterm BinaryExpression {
   
-  fun merge(l,r) {0}
+  fun merge(l,r) {}
 
   -> e:PrimaryExpression [PrimaryExpression];
 
   
-  -> left:BinExp_mid "<"  right:PrimaryExpression	[Less]		{0}
-  -> left:BinExp_mid ">"  right:PrimaryExpression	[Greater]	{0}
-}
-
-
-nonterm BinaryExpression -> e:BinExp_mid;
-
-
-nonterm ConditionalExpression {
-  
-  fun merge(l,r) {0}
-
-  -> e:BinaryExpression [BinaryExpression];
-}
-
-
-nonterm AssignmentExpression {
-  fun merge(l,r) {0}
-
-  -> e:ConditionalExpression [ConditionalExpression];
-}
-
-nonterm Expression {
-  
-  fun merge(l,r) {0}
-
-  -> ae:AssignmentExpression
-	[Head] {0}
-
-  -> e:Expression "," ae:AssignmentExpression
-	[List] {0}
-}
-
-
-
-nonterm TypeSpecifier {
-  -> n:PQTypeName
-	[Name] {0}
-}
-
-
-
-nonterm PQTypeName {
-  fun merge(l,r) {0}
-
-  -> n:PQTypeName_ncc
-	[Local] {0}
-}
-
-
-nonterm PQTypeName_ncc {
-  fun merge(l,r) {0}
-
-  -> n:Identifier			precedence("::")
-	[Id] {0}
-  -> id:TemplateId			precedence("::")
-	[TemplateId] {0}
+  -> left:BinaryExpression "<"  right:PrimaryExpression	[Less] {}
+  -> left:BinaryExpression ">"  right:PrimaryExpression	[Greater] {}
 }
 
 
 nonterm TypeId {
-  -> spec:TypeSpecifier
-	[TypeId] {0}
+  fun merge(l,r) {}
+
+  -> n:Identifier
+	[Id];
+  -> id:TemplateId
+	[TemplateId];
 }
 
 nonterm TemplateArgumentListOpt {
-  -> empty			{0}
-  -> list:TemplateArgumentList	{0}
+  -> list:TemplateArgumentList;
 }
 
 nonterm TemplateId {
   -> n:Identifier "<" list:TemplateArgumentListOpt ">"
-	[Identifier] {0}
+	[TemplateId] {}
 }
 
 nonterm TemplateArgumentList {
   
-  fun merge(l,r) {0}
+  fun merge(l,r) {}
 
-  -> next:TemplateArgumentListContinuation
+  ->
      typeid:TypeId
-	[Type] {0}
+     next:TemplateArgumentListContinuation
+	[Type] {}
 
-  -> next:TemplateArgumentListContinuation
-     e:AssignmentExpression
-	[NonType] {0}
+  ->
+     e:BinaryExpression
+     next:TemplateArgumentListContinuation
+	[NonType] {}
 
-  
-  
 }
 
 nonterm TemplateArgumentListContinuation {
-  fun merge(l,r) {0}
+  fun merge(l,r) {}
 
   -> empty
-	[Head] {0}
+	[Head] {}
 
-  -> x:TemplateArgumentList ","
-	[Tail] {0}
+  -> "," x:TemplateArgumentList
+	[Tail];
 }
