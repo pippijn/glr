@@ -1,7 +1,6 @@
 terminals {
   0 : TOK_EOF	"<EOF>";
-  1 : TOK_COMMA	",";
-  2 : TOK_NAME;
+  1 : TOK_NAME;
 
   token(string) TOK_NAME;
 }

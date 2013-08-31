@@ -18,9 +18,6 @@ rule token = parse
 | '\n'								{ Lexing.new_line lexbuf; token lexbuf }
 | [' ' '\t' '\r']+						{ token lexbuf }
 
-(* operators *)
-| ","								{ TOK_COMMA }
-
 (* identifier *)
 | identifier as id						{ TOK_NAME id }
 
