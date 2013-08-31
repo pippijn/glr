@@ -139,7 +139,7 @@ type stats = {
 
 (* link from one stack node to another *)
 type sibling_link = {
-  (* stack node we're pointing at; == StackNode.cNULL if none *)
+  (* stack node we're pointing at; == StackNode.null if none *)
   mutable sib			: stack_node;
 
   (* semantic value on this link *)
@@ -271,9 +271,6 @@ module Id = struct
 end
 
 
-let cSTATE_INVALID = ParseTables.cSTATE_INVALID
-
-
 (**********************************************************
  * :: Front ends to user code
  **********************************************************)
@@ -300,7 +297,7 @@ module User = struct
 
 
   let symbolName userAct sym =
-    assert (sym <> ParseTables.cSYMBOL_INVALID);
+    assert (sym <> ParseTables.invalid_symbol);
 
     if ParseTables.symIsTerm sym then
       terminalName userAct (ParseTables.symAsTerm sym)
@@ -321,7 +318,7 @@ module User = struct
 
 
   let showSemanticValue userAct sym sval =
-    assert (sym <> ParseTables.cSYMBOL_INVALID);
+    assert (sym <> ParseTables.invalid_symbol);
 
     if ParseTables.symIsTerm sym then
       showTerminalValue userAct (ParseTables.symAsTerm sym) sval
@@ -372,7 +369,7 @@ module User = struct
     userAct.duplicateNontermValue nonterm sval
 
   let duplicateSemanticValue userAct sym sval =
-    assert (sym <> ParseTables.cSYMBOL_INVALID);
+    assert (sym <> ParseTables.invalid_symbol);
 
     let copy =
       (* The C++ implementation checks for NULL sval, but that doesn't
@@ -406,7 +403,7 @@ module User = struct
     userAct.deallocateNontermValue nonterm sval
 
   let deallocateSemanticValue userAct sym sval =
-    assert (sym <> ParseTables.cSYMBOL_INVALID);
+    assert (sym <> ParseTables.invalid_symbol);
 
     if Options._trace_parse () then
       Printf.printf "%s %s%s %s\n"
@@ -450,7 +447,7 @@ module SiblingLink = struct
   type t = sibling_link
 
   (* NULL sibling link *)
-  let cNULL : t = Obj.magic ()
+  let null : t = Obj.magic ()
 
   let create sib sval start_p end_p = { sib; sval; start_p; end_p; }
 
@@ -465,7 +462,7 @@ module StackNode : sig
 
   type t = stack_node
 
-  val cNULL : t
+  val null : t
 
   val create : unit -> t
 
@@ -478,6 +475,9 @@ module StackNode : sig
 
   val inc_refcnt : t -> unit
   val dec_refcnt : 'result glr -> t -> unit
+
+  val hasZeroSiblings : t -> bool
+  val hasOneSibling : t -> bool
 
   val getNodeSymbol
     : 'result glr
@@ -514,13 +514,13 @@ end = struct
   type t = stack_node
 
   (* NULL stack node *)
-  let cNULL : stack_node = Obj.magic ()
+  let null : t = Obj.magic ()
 
 
   let create () = {
-    state          = cSTATE_INVALID;
+    state          = ParseTables.invalid_state;
     leftSiblings   = [];
-    firstSib       = SiblingLink.create cNULL SemanticValue.null Lexing.dummy_pos Lexing.dummy_pos;
+    firstSib       = SiblingLink.create null SemanticValue.null Lexing.dummy_pos Lexing.dummy_pos;
     referenceCount = 0;
     determinDepth  = 0;
     column         = 0;
@@ -554,10 +554,10 @@ end = struct
 
     (* this is implicit in the C++ implementation because firstSib.sib
      * is an RCPtr in C++ *)
-    if node.firstSib.sib != cNULL then
+    if node.firstSib.sib != null then
       dec_refcnt glr node.firstSib.sib;
 
-    node.firstSib.sib <- cNULL;
+    node.firstSib.sib <- null;
 
     if Options._accounting () then (
       glr.stats.numStackNodesAllocd <- glr.stats.numStackNodesAllocd - 1;
@@ -568,7 +568,7 @@ end = struct
     (* explicitly deallocate siblings, so I can deallocate their
      * semantic values if necessary (this requires knowing the
      * associated symbol, which the sibling_links don't know) *)
-    if node.firstSib.sib != cNULL then
+    if node.firstSib.sib != null then
       User.deallocateSemanticValue glr.userAct (getNodeSymbol glr node) node.firstSib.sval;
 
     List.iter (fun s ->
@@ -581,10 +581,22 @@ end = struct
     node.leftSiblings <- []
 
 
+  let hasZeroSiblings node =
+    node.firstSib.sib == null
+
+
+  let hasOneSibling node =
+    node.firstSib.sib != null && node.leftSiblings == []
+
+
+  let hasMultipleSiblings node =
+    node.leftSiblings != []
+
+
   let init node state =
     node.state <- state;
     assert (node.leftSiblings == []);
-    assert (node.firstSib.sib == cNULL);
+    assert (node.firstSib.sib == null);
     node.referenceCount <- 0;
     node.determinDepth  <- 1
 
@@ -602,18 +614,6 @@ end = struct
     node
 
 
-  let hasZeroSiblings node =
-    node.firstSib.sib == cNULL
-
-
-  let hasOneSibling node =
-    node.firstSib.sib != cNULL && node.leftSiblings == []
-
-
-  let hasMultipleSiblings node =
-    node.leftSiblings != []
-
-
   (* add the very first sibling *)
   let addFirstSiblingLink_no_refcnt node leftSib sval start_p end_p =
     assert (hasZeroSiblings node);
@@ -623,7 +623,7 @@ end = struct
 
     (* we don't have any siblings yet; use embedded
      * don't update reference count of 'leftSib', instead caller must do so *)
-    assert (node.firstSib.sib == cNULL);
+    assert (hasZeroSiblings node);
     node.firstSib.sib <- leftSib;     (* update w/o refct *)
 
     node.firstSib.sval <- sval;
@@ -653,7 +653,7 @@ end = struct
 
   (* add a new sibling by creating a new link *)
   let addSiblingLink node leftSib sval start_p end_p =
-    if node.firstSib.sib == cNULL then (
+    if hasZeroSiblings node then (
       addFirstSiblingLink_no_refcnt node leftSib sval start_p end_p;
 
       (* manually increment leftSib's refct *)
@@ -1118,11 +1118,11 @@ end = struct
 
     if Options._trace_parse () then
       Printf.printf "state %d, %s by production %d (rhsLen=%d), back to state %d\n"
-                     (path.startStateId :> int)
-                     (Colour.cyan "reduce")
-                     path.prodIndex
-                     rhsLen
-                     (path.leftEdgeNode.state :> int);
+        (path.startStateId :> int)
+        (Colour.cyan "reduce")
+        path.prodIndex
+        rhsLen
+        (path.leftEdgeNode.state :> int);
 
     if Options._accounting () then
       glr.stats.nondetReduce <- glr.stats.nondetReduce + 1;
@@ -1201,13 +1201,13 @@ end = struct
     ) else if ParseTables.isReduceAction tables action
            || ParseTables.isErrorAction tables action then (
       (* unambiguous reduction or error *)
-      cSTATE_INVALID
+      ParseTables.invalid_state
     ) else (
       (* nondeterministic *)
       let firstEntry = ParseTables.decodeAmbigAction tables action state in
       let numEntries = (ParseTables.getAmbigEntry tables firstEntry :> int) in
 
-      let newState = ref cSTATE_INVALID in
+      let newState = ref ParseTables.invalid_state in
       let i = ref 1 in
       while !i <> numEntries do
         let action = ParseTables.getAmbigEntry tables (firstEntry + !i) in
@@ -1234,7 +1234,7 @@ end = struct
     assert (Arraystack.is_empty glr.active_parsers);
 
     (* for token multi-yield.. *)
-    let prev = ref SiblingLink.cNULL in
+    let prev = ref SiblingLink.null in
 
     Arraystack.iter (fun leftSibling ->
       (* take the node from 'prev_active'; the refcount transfers
@@ -1248,7 +1248,7 @@ end = struct
       (* if we find a shift, this will be set to something valid *)
       let newState = findShift glr.tables tokType action state in
 
-      if newState <> cSTATE_INVALID then (
+      if newState <> ParseTables.invalid_state then (
         (* found a shift *)
 
         if Options._accounting () then
@@ -1256,10 +1256,10 @@ end = struct
 
         if Options._trace_parse () then
           Printf.printf "state %d, %s token %s, to state %d\n"
-                         (state :> int)
-                         (Colour.cyan "shift")
-                         (User.terminalName glr.userAct tokType)
-                         (newState :> int);
+            (state :> int)
+            (Colour.cyan "shift")
+            (User.terminalName glr.userAct tokType)
+            (newState :> int);
 
         (* already a parser in this state? *)
         let rightSibling =
@@ -1278,7 +1278,7 @@ end = struct
 
         (* semantic value for this token *)
         prev :=
-          if !prev == SiblingLink.cNULL then (
+          if !prev == SiblingLink.null then (
               (* usual case *)
               StackNode.addSiblingLink rightSibling leftSibling
                 tokSval (fst tokSloc) (snd tokSloc)
@@ -1328,7 +1328,7 @@ end
 
 let parse_error ?reason glr tokType tokSloc lastToDie =
   if Options._error_verbose () then (
-    if lastToDie <> cSTATE_INVALID then (
+    if lastToDie <> ParseTables.invalid_state then (
       Printf.printf "In state %d, I expected one of these tokens:\n"
         (lastToDie :> int);
       ParseTables.iter_terms glr.tables (fun i ->
@@ -1341,8 +1341,8 @@ let parse_error ?reason glr tokType tokSloc lastToDie =
     );
 
     Printf.printf (*loc*) "Parse error (state %d) at %s\n"
-                  (lastToDie :> int)
-                  (User.terminalName glr.userAct tokType);
+      (lastToDie :> int)
+      (User.terminalName glr.userAct tokType);
     match reason with
     | None -> ()
     | Some reason ->
@@ -1359,7 +1359,7 @@ let parse_error ?reason glr tokType tokSloc lastToDie =
 module GLR : ParserCore = struct
 
   let nondeterministicParseToken glr tokType tokSval tokSloc =
-    let lastToDie = ref cSTATE_INVALID in
+    let lastToDie = ref ParseTables.invalid_state in
 
     (* seed the reduction worklist by analysing the top nodes *)
     Arraystack.iter (fun parsr ->
@@ -1394,7 +1394,7 @@ module GLR : ParserCore = struct
 
     (* goto label: getNextToken *)
     (* last token? *)
-    if tokType = ParseTables.cTERM_EOF then
+    if tokType = ParseTables.eof_term then
       raise End_of_file       (* "break" *)
 
 end
@@ -1468,7 +1468,7 @@ module LR : ParserCore = struct
           if Options._accounting () then (
             glr.stats.numStackNodesAllocd <- glr.stats.numStackNodesAllocd - 1;
           );
-          prev.firstSib.sib <- StackNode.cNULL;
+          prev.firstSib.sib <- StackNode.null;
 
           assert (!parsr.referenceCount = 1);
         done;
@@ -1478,12 +1478,12 @@ module LR : ParserCore = struct
 
         if Options._trace_parse () then
           Printf.printf "state %d, (unambig) %s by %d (len=%d), back to %d then out to %d\n"
-                        (startStateId :> int)
-                        (Colour.cyan "reduce")
-                        prodIndex
-                        rhsLen
-                        (!parsr.state :> int)
-                        (newState :> int);
+            (startStateId :> int)
+            (Colour.cyan "reduce")
+            prodIndex
+            rhsLen
+            (!parsr.state :> int)
+            (newState :> int);
 
         (* call the user's action function (TREEBUILD) *)
         let sval =
@@ -1534,10 +1534,10 @@ module LR : ParserCore = struct
 
       if Options._trace_parse () then
         Printf.printf "state %d, (unambig) %s token %d, to state %d\n"
-                      (!parsr.state :> int)
-                      (Colour.cyan "shift")
-                      (tokType :> int)
-                      (newState :> int);
+          (!parsr.state :> int)
+          (Colour.cyan "shift")
+          (tokType :> int)
+          (newState :> int);
 
       glr.globalNodeColumn <- glr.globalNodeColumn + 1;
 
@@ -1557,7 +1557,7 @@ module LR : ParserCore = struct
       (* get next token *)
       (* "goto getNextToken;" *)
       (* last token? *)
-      if tokType = ParseTables.cTERM_EOF then
+      if tokType = ParseTables.eof_term then
         raise End_of_file       (* "break" *)
 
     ) else (
@@ -1587,17 +1587,21 @@ let rec innerStackSummary printed node =
     (* remember that we've now printed 'node' *)
     printed := node :: !printed;
 
-    if node.firstSib.sib == StackNode.cNULL then (
+    if StackNode.hasZeroSiblings node then (
+
       (* no siblings *)
       nodeSummary node
 
-    ) else if node.leftSiblings == [] then (
+    ) else if StackNode.hasOneSibling node then (
+
       (* one sibling *)
       nodeSummary node ^ "-" ^
       innerStackSummary printed node.firstSib.sib
 
     ) else (
+
       (* multiple siblings *)
+
       (* force order of eval *)
       let nodeSummary = nodeSummary node in
       let firstSummary = innerStackSummary printed node.firstSib.sib in
@@ -1606,7 +1610,9 @@ let rec innerStackSummary printed node =
           acc ^ "|" ^ innerStackSummary printed link.sib
         ) "" node.leftSiblings
       in
+
       Printf.sprintf "%s-(%s%s)" nodeSummary firstSummary siblingsSummary
+
     )
   )
 
@@ -1623,8 +1629,9 @@ let stackSummary glr =
       acc
     else
       let n = Arraystack.nth glr.active_parsers i in
-      let summary = Printf.sprintf "%s (%d: %s)"
-        acc i (innerStackSummary printed n)
+      let summary =
+        Printf.sprintf "%s (%d: %s)"
+          acc i (innerStackSummary printed n)
       in
 
       loop summary (i + 1)
@@ -1647,8 +1654,8 @@ let rec main_loop (glr : 'result glr) lexer token : 'result =
     let tokType = lexer.index token in
 
     Printf.printf "---- processing token %s, %d active parsers ----\n"
-                   (User.terminalName glr.userAct tokType)
-                   (Arraystack.length glr.active_parsers);
+      (User.terminalName glr.userAct tokType)
+      (Arraystack.length glr.active_parsers);
     Printf.printf "Stack:%s\n" (stackSummary glr);
   );
 
@@ -1698,8 +1705,8 @@ let cleanupAfterParse (glr : 'result glr) : 'result =
 
   if not (Arraystack.length glr.active_parsers = 1) then (
     Printf.printf "parsing finished with %d active parsers!\n"
-                  (Arraystack.length glr.active_parsers);
-    raise (ParseError (cSTATE_INVALID, ParseTables.cTERM_INVALID))
+      (Arraystack.length glr.active_parsers);
+    raise (ParseError (ParseTables.invalid_state, ParseTables.invalid_term))
   ) else (
     let last = Arraystack.top glr.active_parsers in
 
@@ -1765,13 +1772,13 @@ let parse (glr : 'result glr) lexer : 'result =
  **********************************************************)
 
 let makePath maxRhsLen () = {
-  sibLinks     = Array.make maxRhsLen SiblingLink.cNULL;
-  symbols      = Array.make maxRhsLen ParseTables.cSYMBOL_INVALID;
-  startStateId = cSTATE_INVALID;
+  sibLinks     = Array.make maxRhsLen SiblingLink.null;
+  symbols      = Array.make maxRhsLen ParseTables.invalid_symbol;
+  startStateId = ParseTables.invalid_state;
   prodIndex    = -1;
   rhsLen       = -1;
   startColumn  = -1;
-  leftEdgeNode = StackNode.cNULL;
+  leftEdgeNode = StackNode.null;
   next         = None;
 }
 

@@ -10,12 +10,12 @@ type symbol_id	= ParseTablesType.symbol_id
 
 type t = ParseTablesType.t
 
-let cSTATE_INVALID : state_id = -1
+let invalid_state : state_id = -1
 
-let cTERM_INVALID : term_index = -1
-let cTERM_EOF : term_index = 0
+let invalid_term : term_index = -1
+let eof_term : term_index = 0
 
-let cSYMBOL_INVALID : symbol_id = 0
+let invalid_symbol : symbol_id = 0
 
 (**********************************************************
  * :: Operations
