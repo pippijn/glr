@@ -1,6 +1,5 @@
 terminals {
   include("ccTerminals.ids")
-
   
   token(string) TOK_INT_LITERAL;
   token(string) TOK_FLOAT_LITERAL;
@@ -14,39 +13,6 @@ terminals {
 
   
   token(string) TOK_ANNOTATION;
-
-  precedence {
-    
-    prec	200 TOK_PREFER_REDUCE;
-    right	195 "::";		
-    prec	190 "const" "volatile" "else" "[";
-
-    
-    
-
-    left	120 ".*" "->*";		
-    left	110 "*" "/" "%";
-    left	100 "+" "-";
-    left	 90 "<<" ">>";
-
-    
-    
-
-    left	 70 "==" "!=";
-    left	 60 "&";
-    left	 50 "^";
-    left	 40 "|";
-    left	 30 "&&";
-    left	 20 "||";
-
-    
-    
-    
-    
-
-    prec	  1 TOK_PREFER_SHIFT;
-    
-  }
 }
 
 

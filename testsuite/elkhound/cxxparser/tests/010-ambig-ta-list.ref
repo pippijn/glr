@@ -1,8 +1,7 @@
 __EarlyStartSymbol -> File TOK_EOF
  File -> TemplateArgumentList
   ------------- ambiguous TemplateArgumentList: 1 of 2 ------------
-   TemplateArgumentList -> TemplateArgumentListContinuation TypeId
-    TemplateArgumentListContinuation
+   TemplateArgumentList -> TypeId TemplateArgumentListContinuation
     TypeId -> TemplateId
      TemplateId -> Identifier TOK_LESSTHAN TemplateArgumentListOpt TOK_GREATERTHAN
       Identifier -> TOK_NAME
@@ -10,24 +9,24 @@ __EarlyStartSymbol -> File TOK_EOF
       TOK_LESSTHAN
       TemplateArgumentListOpt -> TemplateArgumentList
        ------------- ambiguous TemplateArgumentList: 1 of 2 ------------
-        TemplateArgumentList -> TemplateArgumentListContinuation TypeId
-         TemplateArgumentListContinuation
+        TemplateArgumentList -> TypeId TemplateArgumentListContinuation
          TypeId -> Identifier
           Identifier -> TOK_NAME
            TOK_NAME
-       ------------- ambiguous TemplateArgumentList: 2 of 2 ------------
-        TemplateArgumentList -> TemplateArgumentListContinuation BinaryExpression
          TemplateArgumentListContinuation
+       ------------- ambiguous TemplateArgumentList: 2 of 2 ------------
+        TemplateArgumentList -> BinaryExpression TemplateArgumentListContinuation
          BinaryExpression -> PrimaryExpression
           PrimaryExpression -> UnqualifiedId
            UnqualifiedId -> Identifier
             Identifier -> TOK_NAME
              TOK_NAME
+         TemplateArgumentListContinuation
        ----------- end of ambiguous TemplateArgumentList -----------
       TOK_GREATERTHAN
-  ------------- ambiguous TemplateArgumentList: 2 of 2 ------------
-   TemplateArgumentList -> TemplateArgumentListContinuation BinaryExpression
     TemplateArgumentListContinuation
+  ------------- ambiguous TemplateArgumentList: 2 of 2 ------------
+   TemplateArgumentList -> BinaryExpression TemplateArgumentListContinuation
     BinaryExpression -> PrimaryExpression
      PrimaryExpression -> UnqualifiedId
       UnqualifiedId -> TemplateId
@@ -37,23 +36,25 @@ __EarlyStartSymbol -> File TOK_EOF
         TOK_LESSTHAN
         TemplateArgumentListOpt -> TemplateArgumentList
          ------------- ambiguous TemplateArgumentList: 1 of 2 ------------
-          TemplateArgumentList -> TemplateArgumentListContinuation TypeId
-           TemplateArgumentListContinuation
+          TemplateArgumentList -> TypeId TemplateArgumentListContinuation
            TypeId -> Identifier
             Identifier -> TOK_NAME
              TOK_NAME
-         ------------- ambiguous TemplateArgumentList: 2 of 2 ------------
-          TemplateArgumentList -> TemplateArgumentListContinuation BinaryExpression
            TemplateArgumentListContinuation
+         ------------- ambiguous TemplateArgumentList: 2 of 2 ------------
+          TemplateArgumentList -> BinaryExpression TemplateArgumentListContinuation
            BinaryExpression -> PrimaryExpression
             PrimaryExpression -> UnqualifiedId
              UnqualifiedId -> Identifier
               Identifier -> TOK_NAME
                TOK_NAME
+           TemplateArgumentListContinuation
          ----------- end of ambiguous TemplateArgumentList -----------
         TOK_GREATERTHAN
+    TemplateArgumentListContinuation
   ----------- end of ambiguous TemplateArgumentList -----------
  TOK_EOF
-(Type 1:1-1:7 (Head 1:1-0:-1)
+(Type 1:1-1:7
  (TemplateId 1:1-1:7
-  (Identifier 1:1-1:7 temp ((Type 1:6-1:6 (Head 1:6-0:-1) (Id 1:6-1:6 a))))))
+  (TemplateId 1:1-1:7 temp (Type 1:6-1:6 (Id 1:6-1:6 a) (Head 1:7-0:-1))))
+ (Head 2:1-0:-1))
