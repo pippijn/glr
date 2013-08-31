@@ -17,59 +17,46 @@ terminals {
 
 
 nonterm(unit) File {
-  -> t:TemplateArgumentList;
+  -> t:TemplateArgumentList	{}
 }
 
 
 nonterm Identifier {
-  -> n:TOK_NAME {}
+  -> n:TOK_NAME			{}
 }
 
 
 nonterm PrimaryExpression {
-  fun merge(l,r) {}
-
-  -> id:UnqualifiedId
-	[Id];
+  -> id:UnqualifiedId			[Id]	{}
 }
 
 nonterm UnqualifiedId {
   fun merge(l,r) {}
 
-  -> id:Identifier			[Name];
-
-  -> id:TemplateId			[Template];
+  -> id:Identifier			[Name]	{}
+  -> id:TemplateId			[Template]	{}
 }
 
 
 nonterm BinaryExpression {
-  
-  fun merge(l,r) {}
-
-  -> e:PrimaryExpression [PrimaryExpression];
-
-  
-  -> left:BinaryExpression "<"  right:PrimaryExpression	[Less] {}
-  -> left:BinaryExpression ">"  right:PrimaryExpression	[Greater] {}
+  -> e:PrimaryExpression [PrimaryExpression]	{}
 }
 
 
 nonterm TypeId {
   fun merge(l,r) {}
 
-  -> n:Identifier
-	[Id];
-  -> id:TemplateId
-	[TemplateId];
+  -> n:Identifier	[Id]	{}
+  -> id:TemplateId	[TemplateId]	{}
 }
 
 nonterm TemplateArgumentListOpt {
-  -> list:TemplateArgumentList;
+  -> list:TemplateArgumentList	{}
 }
 
 nonterm TemplateId {
   -> n:Identifier "<" list:TemplateArgumentListOpt ">"
-	[TemplateId] {}
+	[TemplateId]	{}
 }
 
 nonterm TemplateArgumentList {
@@ -79,21 +66,21 @@ nonterm TemplateArgumentList {
   ->
      typeid:TypeId
      next:TemplateArgumentListContinuation
-	[Type] {}
+	[Type]	{}
 
   ->
      e:BinaryExpression
      next:TemplateArgumentListContinuation
-	[NonType] {}
+	[NonType]	{}
 
 }
 
 nonterm TemplateArgumentListContinuation {
-  fun merge(l,r) {}
+  fun merge(l,r) 	{}
 
   -> empty
-	[Head] {}
+	[Head]		{}
 
   -> "," x:TemplateArgumentList
-	[Tail];
+	[Tail]		{}
 }
