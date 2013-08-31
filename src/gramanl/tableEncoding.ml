@@ -90,18 +90,34 @@ let encode_goto_error tables =
   error_goto_entry
 
 
+let action_index tables (state_id : Ids.State.t) (term_id : Ids.Terminal.t) =
+  Ids.State.to_int state_id * tables.tables.actionCols
+  + Ids.Terminal.to_int term_id
+
 let action_entry tables (state_id : Ids.State.t) (term_id : Ids.Terminal.t) =
-  tables.tables.actionTable.(Ids.State.to_int state_id * tables.tables.actionCols + Ids.Terminal.to_int term_id)
+  tables.tables.actionTable.(
+    action_index tables state_id term_id
+  )
 
 let set_action_entry tables (state_id : Ids.State.t) (term_id : Ids.Terminal.t) (act : action_entry) =
-  tables.tables.actionTable.(Ids.State.to_int state_id * tables.tables.actionCols + Ids.Terminal.to_int term_id) <- act
+  tables.tables.actionTable.(
+    action_index tables state_id term_id
+  ) <- act
 
+
+let goto_index tables (state_id : Ids.State.t) (nonterm_id : Ids.Nonterminal.t) =
+  Ids.State.to_int state_id * tables.tables.gotoCols
+  + Ids.Nonterminal.to_int nonterm_id
 
 let goto_entry tables (state_id : Ids.State.t) (nonterm_id : Ids.Nonterminal.t) =
-  tables.tables.gotoTable.(Ids.State.to_int state_id * tables.tables.gotoCols + Ids.Nonterminal.to_int nonterm_id)
+  tables.tables.gotoTable.(
+    goto_index tables state_id nonterm_id
+  )
 
 let set_goto_entry tables (state_id : Ids.State.t) (nonterm_id : Ids.Nonterminal.t) (goto : goto_entry) =
-  tables.tables.gotoTable.(Ids.State.to_int state_id * tables.tables.gotoCols + Ids.Nonterminal.to_int nonterm_id) <- goto
+  tables.tables.gotoTable.(
+    goto_index tables state_id nonterm_id
+  ) <- goto
 
 
 let set_state_symbol tables (state_id : Ids.State.t) (sym : symbol_id) =
