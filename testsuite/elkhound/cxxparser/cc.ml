@@ -5,12 +5,12 @@ module Parser = Glr.Easy.Make
   (CcTokens) 
 
 
-let parse_ptree typed file =
+let parse_ptree choice file =
   let module Parser = Parser(struct
-    let ptree = not typed
-    let typed_ptree = typed
-    let treematch = false
-    let user = false
+    let ptree = choice = 0
+    let typed_ptree = choice = 1
+    let treematch = choice = 2
+    let user = choice = 3
   end) in
 
   let input = open_in file in
@@ -21,8 +21,10 @@ let parse_ptree typed file =
 
 let main =
   List.iter (fun file ->
-    parse_ptree false file;
-    parse_ptree true file;
+    parse_ptree 0 file;
+    parse_ptree 1 file;
+    parse_ptree 2 file;
+    parse_ptree 3 file;
   )
 
 

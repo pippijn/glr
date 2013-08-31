@@ -13,3 +13,7 @@ __EarlyStartSymbol -> File TOK_EOF
  TOK_EOF
 ---- result ----
 (Type 1:1-1:6 FOOBAR)
+---- result ----
+(Type 1:1-1:6 FOOBAR)
+---- result ----
+FOOBAR

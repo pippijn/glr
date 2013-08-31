@@ -101,7 +101,10 @@ module Make
     );
     
     if Config.user then (
-      parse action filename actions tables lexer
+      parse (fun tree ->
+        print_endline "---- result ----";
+        action tree
+      ) filename actions tables lexer
     )
 
 end
