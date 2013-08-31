@@ -6,81 +6,78 @@ terminals {
   token(string) TOK_CHAR_LITERAL;
   token(string) TOK_STRING_LITERAL;
 
-  
   token(string) TOK_NAME;
   token(string) TOK_TYPE_NAME;
   token(string) TOK_VARIABLE_NAME;
 
-  
   token(string) TOK_ANNOTATION;
 }
 
 
 nonterm(unit) File {
-  -> t:TemplateArgumentList	{}
+  -> t:TemplateArgumentList				{}
 }
 
 
 nonterm Identifier {
-  -> n:TOK_NAME			{}
+  -> n:TOK_NAME						{}
 }
 
 
 nonterm PrimaryExpression {
-  -> id:UnqualifiedId			[Id]	{}
+  -> id:UnqualifiedId					{}
 }
+
 
 nonterm UnqualifiedId {
   fun merge(l,r) {}
 
-  -> id:Identifier			[Name]	{}
-  -> id:TemplateId			[Template]	{}
+  -> id:Identifier	[Name]				{}
+  -> id:TemplateId	[Template]			{}
 }
 
 
 nonterm BinaryExpression {
-  -> e:PrimaryExpression [PrimaryExpression]	{}
+  -> e:PrimaryExpression				{}
 }
 
 
 nonterm TypeId {
   fun merge(l,r) {}
 
-  -> n:Identifier	[Id]	{}
-  -> id:TemplateId	[TemplateId]	{}
+  -> n:Identifier	[Id]				{}
+  -> id:TemplateId	[TemplateId]			{}
 }
 
+
 nonterm TemplateArgumentListOpt {
-  -> list:TemplateArgumentList	{}
+  -> list:TemplateArgumentList				{}
 }
+
 
 nonterm TemplateId {
   -> n:Identifier "<" list:TemplateArgumentListOpt ">"
-	[TemplateId]	{}
+	[TemplateId]					{}
 }
+
 
 nonterm TemplateArgumentList {
-  
   fun merge(l,r) {}
 
-  ->
-     typeid:TypeId
-     next:TemplateArgumentListContinuation
-	[Type]	{}
+  -> typeid:TypeId next:TemplateArgumentListContinuation
+	[Type]						{}
 
-  ->
-     e:BinaryExpression
-     next:TemplateArgumentListContinuation
-	[NonType]	{}
-
+  -> e:BinaryExpression next:TemplateArgumentListContinuation
+	[NonType]					{}
 }
 
+
 nonterm TemplateArgumentListContinuation {
-  fun merge(l,r) 	{}
+  fun merge(l,r) {}
 
   -> empty
-	[Head]		{}
+	[Head]						{}
 
   -> "," x:TemplateArgumentList
-	[Tail]		{}
+	[Tail]						{}
 }
