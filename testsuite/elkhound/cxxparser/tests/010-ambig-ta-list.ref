@@ -2,18 +2,16 @@
 __EarlyStartSymbol -> File TOK_EOF
  File -> TemplateArgumentList
   ------------- ambiguous TemplateArgumentList: 1 of 2 ------------
-   TemplateArgumentList -> TypeId TemplateArgumentListContinuation
+   TemplateArgumentList -> TypeId
     TypeId -> TOK_NAME
      TOK_NAME
-    TemplateArgumentListContinuation
   ------------- ambiguous TemplateArgumentList: 2 of 2 ------------
-   TemplateArgumentList -> BinaryExpression TemplateArgumentListContinuation
+   TemplateArgumentList -> BinaryExpression
     BinaryExpression -> PrimaryExpression
-     PrimaryExpression -> UnqualifiedId
-      UnqualifiedId -> TOK_NAME
+     PrimaryExpression -> Name
+      Name -> TOK_NAME
        TOK_NAME
-    TemplateArgumentListContinuation
   ----------- end of ambiguous TemplateArgumentList -----------
  TOK_EOF
 ---- result ----
-(Type 1:1-1:6 (Id 1:1-1:6 FOOBAR) (Head 2:1-0:-1))
+(Type 1:1-1:6 FOOBAR)

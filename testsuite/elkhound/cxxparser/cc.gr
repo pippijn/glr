@@ -7,57 +7,16 @@ terminals {
 }
 
 
-nonterm(unit) File {
-  -> t:TemplateArgumentList				{}
-}
+nonterm(string) File		-> t:TemplateArgumentList;
 
-
-nonterm PrimaryExpression {
-  -> id:UnqualifiedId					{}
-}
-
-
-nonterm UnqualifiedId {
-  fun merge(l,r) {}
-
-  -> id:TOK_NAME	[Name]				{}
-}
-
-
-nonterm TypeId {
-  fun merge(l,r) {}
-
-  -> n:TOK_NAME	[Id]					{}
-}
-
-
-nonterm BinaryExpression {
-  -> e:PrimaryExpression				{}
-}
-
-
-nonterm TemplateArgumentListOpt {
-  -> list:TemplateArgumentList				{}
-}
-
+nonterm Name			-> id:TOK_NAME;
+nonterm TypeId			-> id:TOK_NAME;
+nonterm PrimaryExpression	-> id:Name;
+nonterm BinaryExpression	-> e:PrimaryExpression;
 
 nonterm TemplateArgumentList {
-  fun merge(l,r) {}
+  fun merge(l,r) { "Merge(" ^ l ^ "," ^ r ^ ")" }
 
-  -> typeid:TypeId next:TemplateArgumentListContinuation
-	[Type]						{}
-
-  -> e:BinaryExpression next:TemplateArgumentListContinuation
-	[NonType]					{}
-}
-
-
-nonterm TemplateArgumentListContinuation {
-  fun merge(l,r) {}
-
-  -> empty
-	[Head]						{}
-
-  -> "," x:TemplateArgumentList
-	[Tail]						{}
+  -> id:TypeId			[Type];
+  -> id:BinaryExpression	[NonType];
 }
