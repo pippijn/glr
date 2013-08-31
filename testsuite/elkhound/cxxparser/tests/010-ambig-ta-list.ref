@@ -5,11 +5,10 @@ __EarlyStartSymbol -> File TOK_EOF
    TemplateArgument -> TOK_NAME
     TOK_NAME
   ------------- ambiguous TemplateArgument: 2 of 2 ------------
-   TemplateArgument -> NameEnd
-    NameEnd -> NameMiddle
-     NameMiddle -> NameStart
-      NameStart -> TOK_NAME
-       TOK_NAME
+   TemplateArgument -> NameRef
+    NameRef -> Name
+     Name -> TOK_NAME
+      TOK_NAME
   ----------- end of ambiguous TemplateArgument -----------
  TOK_EOF
 ---- result ----
