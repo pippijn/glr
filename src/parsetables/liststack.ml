@@ -20,7 +20,7 @@ let index elt stack =
         else
           loop (idx - 1) xs
   in
-  let idx = length stack in
+  let idx = length stack - 1 in
   loop idx !stack
 
 

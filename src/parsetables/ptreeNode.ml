@@ -49,8 +49,11 @@ let countMergedList self =
 (* add an ambiguous alternative *)
 let add_alternative self alt =
   (* insert as 2nd element *)
-  alt .merged <- self.merged;
-  { self with merged = Some alt }
+  alt.merged <- self.merged;
+  self.merged <- Some alt;
+
+  self
+  (*{ self with merged = Some alt }*)
 
 
 let cyclicSkip self indentation out path =
