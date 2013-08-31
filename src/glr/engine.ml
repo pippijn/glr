@@ -113,7 +113,7 @@
 (* when true, print some diagnosis of failed parses *)
 let noisyFailedParse = true
 
-module Colour = TermColour.Make(TermColour.ANSI)
+module Colour = TermColour.Make(TermColour.HTML)
 
 (* We define our own versions of these exceptions, so that user code raising
  * the ones in Pervasives will not interfere with parser internals. *)
@@ -289,10 +289,10 @@ let symbolName userAct sym =
 
 
 let showTerminalValue userAct term sval =
-  userAct.UserActions.showTerminalValue term sval
+  Colour.escape (userAct.UserActions.showTerminalValue term sval)
 
 let showNontermValue userAct nonterm sval =
-  userAct.UserActions.showNontermValue nonterm sval
+  Colour.escape (userAct.UserActions.showNontermValue nonterm sval)
 
 let showSemanticValue userAct sym sval =
   assert (sym <> ParseTables.cSYMBOL_INVALID);
@@ -309,7 +309,7 @@ let reductionAction userAct productionId svals start_p end_p =
 
 let mergeAlternativeParses userAct lhsIndex left right =
   if Options._trace_parse () then (
-    Printf.printf "%s %s\nL: %s %s\nR: %s %s\n"
+    Printf.printf "%s %s\n1: %s %s\n2: %s %s\n"
       (Colour.green "merge")
       (nonterminalName userAct lhsIndex)
       (unique_id left)
@@ -322,7 +322,7 @@ let mergeAlternativeParses userAct lhsIndex left right =
   let merged = userAct.UserActions.mergeAlternativeParses lhsIndex left right in
 
   if Options._trace_parse () then (
-    Printf.printf "M: %s %s\n"
+    Printf.printf "=: %s %s\n"
       (unique_id merged)
       (showNontermValue userAct lhsIndex merged);
     flush stdout;

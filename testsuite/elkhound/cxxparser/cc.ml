@@ -16,7 +16,7 @@ let parse_ptree typed file =
   let input = open_in file in
   let lexbuf = Lexing.from_channel input in
 
-  Parser.parse print_newline file CcLexer.token lexbuf
+  Parser.parse ignore file CcLexer.token lexbuf
 
 
 let main =

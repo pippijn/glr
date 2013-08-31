@@ -1,3 +1,4 @@
+---- result ----
 __EarlyStartSymbol -> File TOK_EOF
  File -> TemplateArgumentList
   ------------- ambiguous TemplateArgumentList: 1 of 2 ------------
@@ -16,4 +17,5 @@ __EarlyStartSymbol -> File TOK_EOF
     TemplateArgumentListContinuation
   ----------- end of ambiguous TemplateArgumentList -----------
  TOK_EOF
+---- result ----
 (Type 1:1-1:6 (Id 1:1-1:6 FOOBAR) (Head 2:1-0:-1))

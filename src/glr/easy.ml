@@ -73,6 +73,7 @@ module Make
       parse (fun tree ->
         let buf = Buffer.create 128 in
         PtreeNode.print_tree tree buf true;
+        print_endline "---- result ----";
         print_string (Buffer.contents buf);
       ) filename actions tables lexer
     );
@@ -81,6 +82,7 @@ module Make
       let actions = PtreeAct.userActions in
 
       parse (fun tree ->
+        print_endline "---- result ----";
         Sexplib.Sexp.output_hum stdout
           (Ptree.Ptree.sexp_of_t tree);
         print_newline ();
@@ -91,6 +93,7 @@ module Make
       let actions = PtreeAct.userActions in
 
       parse (fun tree ->
+        print_endline "---- result ----";
         Sexplib.Sexp.output_hum stdout
           (Ptree.Ptree.sexp_of_t tree);
         print_newline ()
