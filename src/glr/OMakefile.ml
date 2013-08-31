@@ -9,6 +9,7 @@ install Package ".DEFAULT" [
     "Arraystack";
     "Easy";
     "Engine";
+    "Lrparse";
     "Objpool";
     "Options";
   ];
