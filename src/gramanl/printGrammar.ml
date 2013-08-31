@@ -24,8 +24,7 @@ let print_symbol terms nonterms out sym =
 let print_production terms nonterms out prod =
   let left = NtArray.get nonterms prod.left in
 
-  Printf.fprintf out "  [%a (%a)] %a ->"
-    Ids.Production.print prod.pbase.index_id
+  Printf.fprintf out "[%a] %a ->"
     Ids.Production.print prod.pbase.index_id
     print_sloc left.nbase.name;
 

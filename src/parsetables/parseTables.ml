@@ -1,12 +1,12 @@
 open ParseTablesType
 
 type action_entry = ParseTablesType.action_entry
-type state_id = ParseTablesType.state_id
-type goto_entry = ParseTablesType.goto_entry
-type term_index = ParseTablesType.term_index
-type nt_index = ParseTablesType.nt_index
-type prod_index = ParseTablesType.prod_index
-type symbol_id = ParseTablesType.symbol_id
+type state_id	= ParseTablesType.state_id
+type goto_entry	= ParseTablesType.goto_entry
+type term_index	= ParseTablesType.term_index
+type nt_index	= ParseTablesType.nt_index
+type prod_index	= ParseTablesType.prod_index
+type symbol_id	= ParseTablesType.symbol_id
 
 type t = ParseTablesType.t
 
@@ -58,20 +58,20 @@ let isShiftAction tables (code : action_entry) =
   code > 0 && code <= tables.numStates
 
 (* needs tables for compression *)
-let decodeShift (code : action_entry) shiftedTerminal : state_id =
+let decodeShift tables (code : action_entry) shiftedTerminal : state_id =
   let code = (code :> int) in
   code - 1
 
-let isReduceAction (code : action_entry) =
+let isReduceAction tables (code : action_entry) =
   let code = (code :> int) in
   code < 0
 
 (* needs tables for compression *)
-let decodeReduce (code : action_entry) (in_state : state_id) =
+let decodeReduce tables (code : action_entry) (in_state : state_id) =
   let code = (code :> int) in
   -(code + 1)
 
-let isErrorAction (*tables*) (code : action_entry) =
+let isErrorAction tables (code : action_entry) =
   let code = (code :> int) in
   code = 0
 
@@ -122,9 +122,9 @@ type action =
 
 
 let kind_of_action tables (code : action_entry) =
-  if isReduceAction code then
+  if isReduceAction tables code then
     Reduce
-  else if isErrorAction code then
+  else if isErrorAction tables code then
     Error
   else if isShiftAction tables code then
     Shift
@@ -135,12 +135,12 @@ let kind_of_action tables (code : action_entry) =
 
 let getAction tables (state : state_id) (tok : term_index) =
   let code = getActionEntry tables state tok in
-  if isReduceAction code then
-    ReduceAction (decodeReduce code state)
-  else if isErrorAction code then
+  if isReduceAction tables code then
+    ReduceAction (decodeReduce tables code state)
+  else if isErrorAction tables code then
     ErrorAction
   else if isShiftAction tables code then
-    ShiftAction (decodeShift code tok)
+    ShiftAction (decodeShift tables code tok)
   else
     AmbiguousAction (decodeAmbigAction tables code state)
 
