@@ -7,26 +7,27 @@ type t = {
   symbol : string;
 
   (* array of children *)
-  children : t array;
+  children : t list;
 
   (* list of ambiguous alternatives to this node *)
   mutable merged : t option;
 }
 
 
-let make_leaf sym =
-  {
-    symbol = sym;
-    merged = None;
-    children = [||];
-  }
+let make_leaf sym = {
+  symbol = sym;
+  merged = None;
+  children = [];
+}
 
-let make sym child_count child_fun =
-  {
-    symbol = sym;
-    merged = None;
-    children = Array.init child_count child_fun;
-  }
+let make sym child_count child_fun = {
+  symbol = sym;
+  merged = None;
+  children =
+    CoreInt.fold_right (fun i children ->
+      child_fun i :: children
+    ) 0 (child_count - 1) [];
+}
 
 
 let indent out n =
@@ -53,7 +54,7 @@ let add_alternative self alt =
   self.merged <- Some alt;
 
   self
-  (*{ self with merged = Some alt }*)
+  (*{ self with merged = Some { alt with merged = self.merged } }*)
 
 
 let cyclicSkip self indentation out path =
@@ -103,16 +104,13 @@ let print_alt self indentation out expand alts lhs ct node =
 
   indent out indentation;
 
-  let children = node.children in
-  let numChildren = Array.length children in
-
   Printf.bprintf out "%s" node.symbol;
 
   if expand then (
     (* symbol is just LHS, write out RHS names after "->" *)
-    if numChildren > 0 then (
+    if node.children <> [] then (
       Printf.bprintf out " ->";
-      Array.iter (fun c ->
+      List.iter (fun c ->
         Printf.bprintf out " %s" c.symbol
       ) node.children
     )
@@ -140,7 +138,7 @@ let print_tree self out expand =
         print_alt self indentation out expand alts lhs ct node;
 
         (* iterate over children and print them *)
-        Array.iter (fun c ->
+        List.iter (fun c ->
           innerPrint c (indentation + PtreeOptions._ptree_indent ())
         ) node.children;
 
