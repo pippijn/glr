@@ -67,7 +67,7 @@ let emit_user_actions name variant index final_prod verbatims =
       variant index final_prod verbatims
   in
 
-  if variant == SemanticVariant.User then (
+  if Options._output_dump () && variant == SemanticVariant.User then (
     dump_interf dcl intf;
     dump_implem out impl;
   ) else (

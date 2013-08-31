@@ -20,7 +20,13 @@ type functions = {
   reclassifyTokenArray		: (SemanticValue.t -> int) array;
 }
 
-let default_dup      (names : string array) (sym : int) (sval : SemanticValue.t) : SemanticValue.t = sval
+let default_dup      (names : string array) (sym : int) (sval : SemanticValue.t) : SemanticValue.t =
+  if PtreeOptions._dup_copies () then
+    let serialised = Marshal.(to_string sval [No_sharing]) in
+    Marshal.(from_string serialised 0)
+  else
+    sval
+
 let default_del      (names : string array) (sym : int) (sval : SemanticValue.t) : unit = ()
 let default_show     (names : string array) (sym : int) (sval : SemanticValue.t) : string = ""
 let default_merge    (names : string array) (sym : int) (left : SemanticValue.t) (right : SemanticValue.t) : SemanticValue.t =

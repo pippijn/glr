@@ -19,6 +19,7 @@ let _gen_table_text		= ref false
 let _use_table_dump		= ref true
 let _inline_table_dump		= ref true
 let _compress_table_dump	= ref false
+let _output_dump		= ref true
 
 let _optimise			= ref false
 
@@ -60,6 +61,7 @@ let () =
     "-use-table-dump",		Set _use_table_dump,		" load serialised tables instead of emitting arrays in code";
     "-inline-table-dump",	Set _inline_table_dump,		" inline serialised tables into the Tables module as string";
     "-compress-table-dump",	Set _compress_table_dump,	" compress serialised tables with zlib";
+    "-output-dump",		Set _output_dump,		" produce AST dump instead of OCaml source";
 
     "-optimise",		Set _optimise,			" perform various optimisations on the grammar and ptree";
 
@@ -110,6 +112,7 @@ let _gen_table_text		() = !_gen_table_text
 let _use_table_dump		() = !_use_table_dump
 let _inline_table_dump		() = !_inline_table_dump
 let _compress_table_dump	() = !_compress_table_dump
+let _output_dump		() = !_output_dump
 
 let _optimise			() = !_optimise
 

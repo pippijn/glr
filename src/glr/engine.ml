@@ -250,16 +250,17 @@ let stats glr =
   glr.stats
 
 
-(* produce a small unique integer for each memory address *)
-let unique_table = ref []
+(* produce a small unique integer for each
+ * physically different semantic value *)
+let colour_id id = Colour.pink ("@" ^ string_of_int id)
+let empty_unique_table = [(SemanticValue.null, colour_id 0)]
+let unique_table = ref empty_unique_table
 let unique_id : SemanticValue.t -> string =
   fun obj ->
     try
       snd (List.find (fun (addr, _) -> addr == obj) !unique_table)
     with Not_found ->
-      let id =
-        Colour.pink ("@" ^ string_of_int (List.length !unique_table))
-      in
+      let id = colour_id (List.length !unique_table) in
       unique_table := (obj, id) :: !unique_table;
       id
 
@@ -344,22 +345,27 @@ let duplicateNontermValue userAct nonterm sval =
 let duplicateSemanticValue userAct sym sval =
   assert (sym <> ParseTables.cSYMBOL_INVALID);
 
+  let copy =
+    (* the C++ implementation checks for NULL sval, but I don't think
+     * that can be here in the ML version, and I'm not convinced the
+     * check would even be safe *)
+    if ParseTables.symIsTerm sym then
+      duplicateTerminalValue userAct (ParseTables.symAsTerm sym) sval
+    else
+      duplicateNontermValue userAct (ParseTables.symAsNonterm sym) sval
+  in
+
   if Options._trace_parse () then (
-    Printf.printf "%s %s%s %s\n"
+    Printf.printf "%s %s%s = %s %s\n"
       (Colour.green "dup")
       (symbolName userAct sym)
       (unique_id sval)
+      (unique_id copy)
       (showSemanticValue userAct sym sval);
     flush stdout;
   );
 
-  (* the C++ implementation checks for NULL sval, but I don't think
-   * that can be here in the ML version, and I'm not convinced the
-   * check would even be safe *)
-  if ParseTables.symIsTerm sym then
-    duplicateTerminalValue userAct (ParseTables.symAsTerm sym) sval
-  else
-    duplicateNontermValue userAct (ParseTables.symAsNonterm sym) sval
+  copy
 
 
 let deallocateTerminalValue userAct term sval =
@@ -966,8 +972,8 @@ let rec rwlRecursiveProcess glr tokType start_p path =
   for i = rhsLen - 1 downto 0 do
     let sib = path.sibLinks.(i) in
 
-    (* put the sval in the array that will be passed to the user *)
-    glr.toPass.(i) <- sib.sval;
+    (* put a copy of the sval in the array that will be passed to the user *)
+    glr.toPass.(i) <- duplicateSemanticValue glr.userAct path.symbols.(i) sib.sval;
     if Options._trace_parse () then
       Printf.printf "toPass[%d] = %s\n" i (unique_id sib.sval);
 
@@ -975,9 +981,6 @@ let rec rwlRecursiveProcess glr tokType start_p path =
       leftEdge := sib.start_p;
     if !rightEdge == Lexing.dummy_pos && sib.end_p != Lexing.dummy_pos then
       rightEdge := sib.end_p;
-
-    (* ask user to duplicate, store that back in 'sib' *)
-    sib.sval <- duplicateSemanticValue glr.userAct path.symbols.(i) sib.sval;
   done;
 
   (* invoke user's reduction action (TREEBUILD) *)
@@ -1547,7 +1550,7 @@ let cleanupAfterParse (glr : 'result glr) : 'result =
 
 
 let parse (glr : 'result glr) lexer : 'result =
-  unique_table := [];
+  unique_table := empty_unique_table;
 
   if glr.globalNodeColumn <> 0 then
     failwith "cannot reuse glr object for multiple parses";
