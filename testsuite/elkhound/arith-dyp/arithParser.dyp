@@ -1,0 +1,31 @@
+%token TOK_EOF
+%token<int> TOK_NUMBER
+%token TOK_PLUS
+%token TOK_MINUS
+%token TOK_TIMES
+%token TOK_DIVIDE
+%token TOK_LPAREN
+%token TOK_RPAREN
+%token TOK_EQUALS
+%token TOK_OROR
+%token TOK_ANDAND
+%token TOK_IF
+%token TOK_THEN
+%token TOK_ELSE
+%token TOK_END
+
+%start parse
+%relation pi<pt<pp
+
+%%
+
+parse:
+	| exp TOK_EOF				{ $1 }
+
+exp:
+	| TOK_NUMBER				{ $1 } pi
+	| TOK_LPAREN exp TOK_RPAREN		{ $2 } pi
+	| exp(<=pp) TOK_PLUS exp(<pp)		{ $1 + $3 } pp
+	| exp(<=pp) TOK_MINUS exp(<pp)		{ $1 - $3 } pp
+	| exp(<=pt) TOK_TIMES exp(<pt)		{ $1 * $3 } pt
+	| exp(<=pt) TOK_DIVIDE exp(<pt)		{ $1 / $3 } pt
