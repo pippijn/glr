@@ -1,11 +1,20 @@
 (* Deterministic LALR(1) parser. *)
 
+let computeMaxRhsLen tables =
+  CoreInt.fold_left (fun len i ->
+    max len (ParseTables.getProdInfo_rhsLen tables i)
+  ) 0 0 (ParseTables.getNumProds tables - 1)
+
+
 let parse
   (actions : 'result UserActions.t)
   (tables  : ParseTables.t)
   (lexer   : ('lexbuf, 'token) Lexerint.lexer)
   (lexbuf  : 'lexbuf)
 : 'result =
+
+  (* make an array of semantic values for the action rule *)
+  let svalArray = Array.make (computeMaxRhsLen tables) SemanticValue.null in
 
   let rec main_loop
     (stack   : (ParseTables.state_id * SemanticValue.t) list)
@@ -50,9 +59,6 @@ let parse
         let rhsLen = ParseTables.getProdInfo_rhsLen tables rule in
         let lhs = ParseTables.getProdInfo_lhsIndex tables rule in
 
-        (* make an array of semantic values for the action rule *)
-        let svalArray = Array.make rhsLen SemanticValue.null in
-
         (* move svals from the stack into the sval array *)
         let rec moveSvals svalArray i stack =
           if i = 0 then
@@ -60,8 +66,8 @@ let parse
           else
             match stack with
             | (_, sval) :: tl ->
-                (*svalArray.(i - 1) <- sval;*)
-                (Obj.magic svalArray).(i - 1) <- (Obj.magic sval : int);
+                (*(Obj.magic svalArray).(i - 1) <- (Obj.magic sval : int);*)
+                svalArray.(i - 1) <- sval;
                 moveSvals svalArray (i - 1) tl
             | [] -> assert false
         in
