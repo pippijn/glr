@@ -12,8 +12,8 @@ __EarlyStartSymbol -> File TOK_EOF
   ----------- end of ambiguous TemplateArgument -----------
  TOK_EOF
 ---- result ----
-(Type 1:1-1:6 FOOBAR)
+(Merge (Type 1:1-1:6 FOOBAR) (NonType 1:1-1:6 FOOBAR))
 ---- result ----
-(Type 1:1-1:6 FOOBAR)
+(Merge (Type 1:1-1:6 FOOBAR) (NonType 1:1-1:6 FOOBAR))
 ---- result ----
-FOOBAR
+Merge(FOOBAR,FOOBAR)

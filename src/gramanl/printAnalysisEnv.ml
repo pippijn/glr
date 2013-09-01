@@ -119,6 +119,7 @@ let print_item_set ?(print_nonkernels=false) env out item_set =
   List.iter (fun item ->
     output_string out "  can reduce by ";
     let prod = ProdArray.get env.index.prods item.dprod.prod in
+    assert (prod.pbase.index_id == item.dprod.prod);
     PrintGrammar.print_production env.index.terms env.index.nonterms out prod;
     output_char out '\n';
   ) item_set.dots_at_end;

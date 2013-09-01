@@ -8,7 +8,7 @@ open Camlp4.PreCast
 let start_name = Sloc.generated "__EarlyStartSymbol"
 
 
-(* synthesize a rule "__EarlyStartSymbol -> Start EOF" *)
+(* synthesise a rule "__EarlyStartSymbol -> Start EOF" *)
 let synthesise_start_rule topforms =
   (* find the name of the user's EOF token *)
   let TermDecl (_, eof, _) = List.find (fun (TermDecl (code, _, _)) -> code == 0) topforms.decls in
