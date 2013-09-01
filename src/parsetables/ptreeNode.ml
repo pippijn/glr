@@ -10,7 +10,7 @@ type t = {
   children : t list;
 
   (* list of ambiguous alternatives to this node *)
-  mutable merged : t option;
+  merged : t option;
 }
 
 
@@ -50,11 +50,7 @@ let countMergedList self =
 (* add an ambiguous alternative *)
 let add_alternative self alt =
   (* insert as 2nd element *)
-  alt.merged <- self.merged;
-  self.merged <- Some alt;
-
-  self
-  (*{ self with merged = Some { alt with merged = self.merged } }*)
+  { self with merged = Some { alt with merged = self.merged } }
 
 
 let cyclicSkip self indentation out path =
