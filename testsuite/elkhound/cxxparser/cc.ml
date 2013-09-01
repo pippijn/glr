@@ -17,7 +17,7 @@ let parse_ptree choice file =
   let input = open_in file in
   let lexbuf = Lexing.from_channel input in
 
-  Parser.parse ignore file CcLexer.token lexbuf
+  Parser.parse print_endline file CcLexer.token lexbuf
 
 
 let main =
@@ -25,7 +25,7 @@ let main =
     parse_ptree 0 file;
     parse_ptree 1 file;
     (*parse_ptree 2 file;*)
-    (*parse_ptree 3 file;*)
+    parse_ptree 3 file;
   )
 
 
