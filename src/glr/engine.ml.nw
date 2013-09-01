@@ -95,6 +95,7 @@ Relative to C++ implementation, what is not done:
 <<ml>>=
 
 module Colour = TermColour.Make(TermColour.ANSI)
+
 @
 We define our own versions of this exception, so that user code raising
 the ones in [[Pervasives]] will not interfere with parser internals.
@@ -381,6 +382,32 @@ module Show = struct
         v.startColumn
         stack_node v.leftEdgeNode
         (option path) v.next
+
+end
+
+module Debug = struct
+
+  let trace = false
+
+  let level = ref 0
+  let indent () =
+    for i = 0 to !level - 1 do
+      print_string " "
+    done
+
+  let instrument name f =
+    if trace then (
+      indent ();
+      print_endline ("+ " ^ name);
+      incr level;
+      let r = f () in
+      decr level;
+      indent ();
+      print_endline ("- " ^ name);
+      r
+    ) else (
+      f ()
+    )
 
 end
 
@@ -932,28 +959,53 @@ end = struct
 
 
   let compare_path glr p1 p2 =
+    if Debug.trace then (
+      let p1NtIndex = ParseTables.getProdInfo_lhsIndex glr.tables p1.prodIndex in
+      let p2NtIndex = ParseTables.getProdInfo_lhsIndex glr.tables p2.prodIndex in
+
+      Printf.printf "comparing productions [%d] %s <=> [%d] %s\n"
+        p1.prodIndex
+        (User.nonterminalName glr.userAct p1NtIndex)
+        p2.prodIndex
+        (User.nonterminalName glr.userAct p2NtIndex)
+    );
+
     if p1.startColumn > p2.startColumn then (
 @
       [[p1]] spans fewer tokens, so it goes first.
 <<ml>>=
+      if Debug.trace then (
+        Printf.printf "p1.startColumn (%d) > p2.startColumn (%d)\n"
+          p1.startColumn p2.startColumn
+      );
       -1
     ) else if p2.startColumn > p1.startColumn then (
 @
       Same logic.
 <<ml>>=
+      if Debug.trace then (
+        Printf.printf "p2.startColumn (%d) > p1.startColumn (%d)\n"
+          p2.startColumn p1.startColumn
+      );
       1
     ) else (
-      let tables = glr.tables in
 @
       Equal start columns, compare nonterm ids.
 <<ml>>=
-      let p1NtIndex = ParseTables.getProdInfo_lhsIndex tables p1.prodIndex in
-      let p2NtIndex = ParseTables.getProdInfo_lhsIndex tables p2.prodIndex in
+      let p1NtIndex = ParseTables.getProdInfo_lhsIndex glr.tables p1.prodIndex in
+      let p2NtIndex = ParseTables.getProdInfo_lhsIndex glr.tables p2.prodIndex in
+
 @
       Check nonterm order.
 <<ml>>=
-      let ord1 = ParseTables.getNontermOrdinal tables p1NtIndex in
-      let ord2 = ParseTables.getNontermOrdinal tables p2NtIndex in
+      let ord1 = ParseTables.getNontermOrdinal glr.tables p1NtIndex in
+      let ord2 = ParseTables.getNontermOrdinal glr.tables p2NtIndex in
+
+      if Debug.trace then (
+        Printf.printf "ordinal %d <=> %d\n"
+          ord1
+          ord2
+      );
 
       ord1 - ord2
     )
@@ -964,10 +1016,34 @@ end = struct
 <<ml>>=
   let rec search_pos glr p prev =
     match prev.next with
-    | Some next when compare_path glr p next < 0 ->
+    | Some next when compare_path glr p next >= 0 ->
         search_pos glr p next
     | _ ->
         prev
+
+
+  let length glr =
+    let rec loop accu next =
+      match next with
+      | None -> accu
+      | Some next -> loop (accu + 1) next.next
+    in
+    loop 0 glr.top
+
+
+  let show glr =
+    let rec show accu = function
+      | None -> accu
+      | Some path ->
+          let str =
+            Printf.sprintf "(%d, %d)"
+              path.startStateId
+              path.prodIndex
+          in
+          show (str :: accu) path.next
+    in
+    Printf.sprintf "[%s]"
+      (String.concat "; " (show [] glr.top))
 
 
   let insert_copy glr src leftEdge =
@@ -992,10 +1068,16 @@ end = struct
       p.symbols .(i) <- src.symbols .(i);
     done;
 
+    let len = length glr in
+    if Debug.trace then (
+      Printf.printf "queue(%d): %s\n"
+        len (show glr)
+    );
+
 @
     Find proper place to insert new path.
 <<ml>>=
-    match glr.top with
+    begin match glr.top with
     | None ->
 @
         Prepend.
@@ -1019,6 +1101,15 @@ end = struct
           p.next <- prev.next;
           prev.next <- Some p;
         )
+    end;
+
+    assert (length glr = len + 1);
+
+    if Debug.trace then (
+      let len = length glr in
+      Printf.printf "new queue(%d): %s\n"
+        len (show glr);
+    )
 
 
   let dequeue glr =
@@ -1114,18 +1205,32 @@ end = struct
 @
           Do nothing.
 <<ml>>=
+          if Debug.trace then (
+            print_endline "mustUseLink is Some"
+          );
           ()
 
       | None ->
 @
           Copy the prototype path, it's the one we want.
 <<ml>>=
+          if Debug.trace then (
+            print_endline "mustUseLink is None"
+          );
           Path.insert_copy glr proto currentNode
 
     ) else (
 @
       Explore [[currentNode]]'s siblings.
 <<ml>>=
+      if Debug.trace then (
+        let ntIndex = ParseTables.getProdInfo_lhsIndex glr.tables proto.prodIndex in
+        Printf.printf "enqueue in %s %d, %d\n"
+          (User.nonterminalName glr.userAct ntIndex)
+          proto.startStateId
+          proto.prodIndex
+      );
+
       collectPathLink glr proto (popsRemaining - 1) currentNode mustUseLink currentNode.firstSib;
 
       List.iter (fun sibling ->
@@ -1346,6 +1451,12 @@ end = struct
 
 
   let rec recursiveProcess glr tokType start_p path =
+    if Debug.trace then (
+      Printf.printf "process %d, %d\n"
+        path.startStateId
+        path.prodIndex
+    );
+
 @
     Info about the production.
 <<ml>>=
@@ -1683,6 +1794,9 @@ module GLR : ParserCore = struct
 @
     Drop into worklist processing loop.
 <<ml>>=
+    if Debug.trace then (
+      print_endline "start processing"
+    );
     RWL.processWorklist glr tokType (fst tokSloc);
 @
     Do all shifts last.
@@ -2012,9 +2126,11 @@ let rec main_loop (glr : 'result glr) lexer lexbuf token : 'result =
   if Options._trace_parse () then (
     let open Lexerint in
     let tokType = lexer.index token in
+    let tokSval = lexer.sval token in
 
-    Printf.printf "---- processing token %s, %d active parsers ----\n"
+    Printf.printf "---- processing token %s%s, %d active parsers ----\n"
       (User.terminalName glr.userAct tokType)
+      (Id.get tokSval)
       (Arraystack.length glr.active_parsers);
     Printf.printf "Stack:%s\n" (stackSummary glr);
   );
