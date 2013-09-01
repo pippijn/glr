@@ -87,12 +87,12 @@ let getGotoEntry tables (state_id : state_id) (nonterm_id : nt_index) =
   tables.gotoTable.(state_id * tables.gotoCols + nonterm_id)
 
 (* needs tables for compression *)
-let decodeGoto (code : goto_entry) shiftNonterminal : state_id =
+let decodeGoto tables (code : goto_entry) shiftNonterminal : state_id =
   let code = (code :> int) in
   code
 
 let getGoto tables (state_id : state_id) (nonterm_id : nt_index) : state_id =
-  decodeGoto (getGotoEntry tables state_id nonterm_id) nonterm_id
+  decodeGoto tables (getGotoEntry tables state_id nonterm_id) nonterm_id
 
 
 let getProdInfo_rhsLen tables rule =

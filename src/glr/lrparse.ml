@@ -83,7 +83,7 @@ let parse
         let next = fst (List.hd stack) in
 
         (* get new state *)
-        let dest = ParseTables.getGotoEntry tables next lhs in
+        let dest = ParseTables.getGoto tables next lhs in
 
         if Options._trace_parse () then
           Printf.printf "reduce by rule %d (len=%d, lhs=%d), goto state %d\n"
