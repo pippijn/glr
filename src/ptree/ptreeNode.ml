@@ -3,26 +3,26 @@
 
 (* a node in a parse tree *)
 type t = {
+  (* list of ambiguous alternatives to this node *)
+  merged : t option;
+
   (* symbol at this node *)
   symbol : string;
 
-  (* array of children *)
+  (* list of children *)
   children : t list;
-
-  (* list of ambiguous alternatives to this node *)
-  mutable merged : t option;
 }
 
 
 let make_leaf sym = {
-  symbol = sym;
   merged = None;
+  symbol = sym;
   children = [];
 }
 
 let make sym child_count child_fun = {
-  symbol = sym;
   merged = None;
+  symbol = sym;
   children =
     CoreInt.fold_right (fun i children ->
       child_fun i :: children
@@ -43,20 +43,17 @@ let rec merged_fold f init merged =
 
 
 (* just the length of the 'merged' list *)
-let countMergedList self =
+let merged_length self =
   merged_fold (fun v _ -> v + 1) 0 (Some self)
 
 
 (* add an ambiguous alternative *)
 let add_alternative self alt =
   (* insert as 2nd element *)
-  (*{ self with merged = Some { alt with merged = self.merged } }*)
-  alt.merged <- self.merged;
-  self.merged <- Some alt;
-  self
+  { self with merged = Some { alt with merged = self.merged } }
 
 
-let cyclicSkip self indentation out path =
+let cyclic_skip self indentation out path =
   if PtreeOptions._ptree_cycles () then (
     (* does 'self' appear in 'path'? *)
     let idx = Liststack.index self path in
@@ -64,7 +61,7 @@ let cyclicSkip self indentation out path =
       (* yes; print a cyclicity reference *)
       indent out indentation;
       Printf.bprintf out "[CYCLIC: refers to %d hops up]\n"
-                          (Liststack.length path - idx + 1);
+        (Liststack.length path - idx + 1);
       true   (* return *)
     ) else (
       (* no; add myself to the path *)
@@ -78,7 +75,7 @@ let cyclicSkip self indentation out path =
 
 let print_merged self indentation symbol =
   (* this is an ambiguity node *)
-  let alts = countMergedList self in
+  let alts = merged_length self in
 
   (* get nonterm from first; should all be same *)
   let lhs =
@@ -98,32 +95,33 @@ let print_alt self indentation out expand alts lhs ct node =
   if alts > 1 then (
     indent out (indentation - PtreeOptions._ptree_indent ());
     Printf.bprintf out "------------- ambiguous %s: %d of %d ------------\n"
-                        lhs ct alts
+      lhs ct alts
   );
 
   indent out indentation;
 
-  Printf.bprintf out "%s" node.symbol;
+  Buffer.add_string out node.symbol;
 
   if expand then (
     (* symbol is just LHS, write out RHS names after "->" *)
     if node.children <> [] then (
-      Printf.bprintf out " ->";
+      Buffer.add_string out " ->";
       List.iter (fun c ->
-        Printf.bprintf out " %s" c.symbol
+        Buffer.add_char out ' ';
+        Buffer.add_string out c.symbol;
       ) node.children
     )
   );
 
-  Printf.bprintf out "\n"
+  Buffer.add_char out '\n'
 
 
 let print_tree self out expand =
   (* for detecting cyclicity *)
   let path = Liststack.create () in
 
-  let rec innerPrint self indentation =
-    if not (cyclicSkip self indentation out path) then (
+  let rec print_tree self indentation =
+    if not (cyclic_skip self indentation out path) then (
       let indentation, lhs, alts =
         match self.merged with
         | Some _ ->
@@ -138,7 +136,7 @@ let print_tree self out expand =
 
         (* iterate over children and print them *)
         List.iter (fun c ->
-          innerPrint c (indentation + PtreeOptions._ptree_indent ())
+          print_tree c (indentation + PtreeOptions._ptree_indent ())
         ) node.children;
 
         ct + 1
@@ -156,7 +154,7 @@ let print_tree self out expand =
     );
   in
 
-  innerPrint self 0(*indentation*)
+  print_tree self 0(*indentation*)
 
 
 let to_string self expand =
