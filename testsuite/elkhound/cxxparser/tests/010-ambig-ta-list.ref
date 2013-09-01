@@ -1,19 +1,462 @@
 ---- result ----
 __EarlyStartSymbol -> File TOK_EOF
- File -> TemplateArgument
-  ------------- ambiguous TemplateArgument: 1 of 2 ------------
-   TemplateArgument -> TOK_NAME
-    TOK_NAME
-  ------------- ambiguous TemplateArgument: 2 of 2 ------------
-   TemplateArgument -> NameRef
-    NameRef -> Name
-     Name -> TOK_NAME
-      TOK_NAME
-  ----------- end of ambiguous TemplateArgument -----------
+ File -> TranslationUnit
+  TranslationUnit -> TranslationUnit Declaration
+   TranslationUnit
+   Declaration -> BlockDeclaration
+    BlockDeclaration -> SimpleDeclaration
+     SimpleDeclaration -> DeclSpecifier InitDeclaratorList TOK_SEMICOLON
+      DeclSpecifier -> PQTypeName UberModifierSeqOpt
+       PQTypeName -> PQTypeName_ncc
+        PQTypeName_ncc -> TemplateId
+         TemplateId -> Identifier TOK_LESSTHAN TemplateArgumentListOpt TOK_GREATERTHAN
+          Identifier -> TOK_NAME
+           TOK_NAME
+          TOK_LESSTHAN
+          TemplateArgumentListOpt -> TemplateArgumentList
+           ------------- ambiguous TemplateArgumentList: 1 of 2 ------------
+            TemplateArgumentList -> TemplateArgumentListContinuation TypeId
+             TemplateArgumentListContinuation
+             TypeId -> TypeSpecifier AbstractDeclaratorOpt
+              TypeSpecifier -> PQTypeName UberCVQualifierSeqOpt
+               PQTypeName -> PQTypeName_ncc
+                PQTypeName_ncc -> TemplateId
+                 TemplateId -> Identifier TOK_LESSTHAN TemplateArgumentListOpt TOK_GREATERTHAN
+                  Identifier -> TOK_NAME
+                   TOK_NAME
+                  TOK_LESSTHAN
+                  TemplateArgumentListOpt -> TemplateArgumentList
+                   ------------- ambiguous TemplateArgumentList: 1 of 2 ------------
+                    TemplateArgumentList -> TemplateArgumentListContinuation TypeId
+                     TemplateArgumentListContinuation -> TemplateArgumentList TOK_COMMA
+                      ------------- ambiguous TemplateArgumentList: 1 of 2 ------------
+                       TemplateArgumentList -> TemplateArgumentListContinuation TypeId
+                        TemplateArgumentListContinuation
+                        TypeId -> TypeSpecifier AbstractDeclaratorOpt
+                         TypeSpecifier -> PQTypeName UberCVQualifierSeqOpt
+                          PQTypeName -> PQTypeName_ncc
+                           PQTypeName_ncc -> Identifier
+                            Identifier -> TOK_NAME
+                             TOK_NAME
+                          UberCVQualifierSeqOpt
+                         AbstractDeclaratorOpt
+                      ------------- ambiguous TemplateArgumentList: 2 of 2 ------------
+                       TemplateArgumentList -> TemplateArgumentListContinuation AssignmentExpression
+                        TemplateArgumentListContinuation
+                        AssignmentExpression -> ConditionalExpression
+                         ConditionalExpression -> BinaryExpression
+                          BinaryExpression -> BinExp_low
+                           BinExp_low -> BinExp_mid
+                            BinExp_mid -> BinExp_high
+                             BinExp_high -> CastExpression
+                              CastExpression -> UnaryExpression
+                               UnaryExpression -> PostfixExpression
+                                PostfixExpression -> PrimaryExpression
+                                 PrimaryExpression -> IdExpression
+                                  IdExpression -> PQualifiedId
+                                   PQualifiedId -> UnqualifiedId
+                                    UnqualifiedId -> Identifier
+                                     Identifier -> TOK_NAME
+                                      TOK_NAME
+                      ----------- end of ambiguous TemplateArgumentList -----------
+                      TOK_COMMA
+                     TypeId -> TypeSpecifier AbstractDeclaratorOpt
+                      TypeSpecifier -> PQTypeName UberCVQualifierSeqOpt
+                       PQTypeName -> PQTypeName_ncc
+                        PQTypeName_ncc -> TemplateId
+                         TemplateId -> Identifier TOK_LESSTHAN TemplateArgumentListOpt TOK_GREATERTHAN
+                          Identifier -> TOK_NAME
+                           TOK_NAME
+                          TOK_LESSTHAN
+                          TemplateArgumentListOpt -> TemplateArgumentList
+                           ------------- ambiguous TemplateArgumentList: 1 of 2 ------------
+                            TemplateArgumentList -> TemplateArgumentListContinuation TypeId
+                             TemplateArgumentListContinuation
+                             TypeId -> TypeSpecifier AbstractDeclaratorOpt
+                              TypeSpecifier -> PQTypeName UberCVQualifierSeqOpt
+                               PQTypeName -> PQTypeName_ncc
+                                PQTypeName_ncc -> Identifier
+                                 Identifier -> TOK_NAME
+                                  TOK_NAME
+                               UberCVQualifierSeqOpt
+                              AbstractDeclaratorOpt
+                           ------------- ambiguous TemplateArgumentList: 2 of 2 ------------
+                            TemplateArgumentList -> TemplateArgumentListContinuation AssignmentExpression
+                             TemplateArgumentListContinuation
+                             AssignmentExpression -> ConditionalExpression
+                              ConditionalExpression -> BinaryExpression
+                               BinaryExpression -> BinExp_low
+                                BinExp_low -> BinExp_mid
+                                 BinExp_mid -> BinExp_high
+                                  BinExp_high -> CastExpression
+                                   CastExpression -> UnaryExpression
+                                    UnaryExpression -> PostfixExpression
+                                     PostfixExpression -> PrimaryExpression
+                                      PrimaryExpression -> IdExpression
+                                       IdExpression -> PQualifiedId
+                                        PQualifiedId -> UnqualifiedId
+                                         UnqualifiedId -> Identifier
+                                          Identifier -> TOK_NAME
+                                           TOK_NAME
+                           ----------- end of ambiguous TemplateArgumentList -----------
+                          TOK_GREATERTHAN
+                       UberCVQualifierSeqOpt
+                      AbstractDeclaratorOpt
+                   ------------- ambiguous TemplateArgumentList: 2 of 2 ------------
+                    TemplateArgumentList -> TemplateArgumentListContinuation AssignmentExpression
+                     TemplateArgumentListContinuation -> TemplateArgumentList TOK_COMMA
+                      ------------- ambiguous TemplateArgumentList: 1 of 2 ------------
+                       TemplateArgumentList -> TemplateArgumentListContinuation TypeId
+                        TemplateArgumentListContinuation
+                        TypeId -> TypeSpecifier AbstractDeclaratorOpt
+                         TypeSpecifier -> PQTypeName UberCVQualifierSeqOpt
+                          PQTypeName -> PQTypeName_ncc
+                           PQTypeName_ncc -> Identifier
+                            Identifier -> TOK_NAME
+                             TOK_NAME
+                          UberCVQualifierSeqOpt
+                         AbstractDeclaratorOpt
+                      ------------- ambiguous TemplateArgumentList: 2 of 2 ------------
+                       TemplateArgumentList -> TemplateArgumentListContinuation AssignmentExpression
+                        TemplateArgumentListContinuation
+                        AssignmentExpression -> ConditionalExpression
+                         ConditionalExpression -> BinaryExpression
+                          BinaryExpression -> BinExp_low
+                           BinExp_low -> BinExp_mid
+                            BinExp_mid -> BinExp_high
+                             BinExp_high -> CastExpression
+                              CastExpression -> UnaryExpression
+                               UnaryExpression -> PostfixExpression
+                                PostfixExpression -> PrimaryExpression
+                                 PrimaryExpression -> IdExpression
+                                  IdExpression -> PQualifiedId
+                                   PQualifiedId -> UnqualifiedId
+                                    UnqualifiedId -> Identifier
+                                     Identifier -> TOK_NAME
+                                      TOK_NAME
+                      ----------- end of ambiguous TemplateArgumentList -----------
+                      TOK_COMMA
+                     AssignmentExpression -> ConditionalExpression
+                      ConditionalExpression -> BinaryExpression
+                       BinaryExpression -> BinExp_low
+                        BinExp_low -> BinExp_mid
+                         BinExp_mid -> BinExp_high
+                          BinExp_high -> CastExpression
+                           CastExpression -> UnaryExpression
+                            UnaryExpression -> PostfixExpression
+                             PostfixExpression -> PrimaryExpression
+                              PrimaryExpression -> IdExpression
+                               IdExpression -> PQualifiedId
+                                PQualifiedId -> UnqualifiedId
+                                 UnqualifiedId -> TemplateId
+                                  TemplateId -> Identifier TOK_LESSTHAN TemplateArgumentListOpt TOK_GREATERTHAN
+                                   Identifier -> TOK_NAME
+                                    TOK_NAME
+                                   TOK_LESSTHAN
+                                   TemplateArgumentListOpt -> TemplateArgumentList
+                                    ------------- ambiguous TemplateArgumentList: 1 of 2 ------------
+                                     TemplateArgumentList -> TemplateArgumentListContinuation TypeId
+                                      TemplateArgumentListContinuation
+                                      TypeId -> TypeSpecifier AbstractDeclaratorOpt
+                                       TypeSpecifier -> PQTypeName UberCVQualifierSeqOpt
+                                        PQTypeName -> PQTypeName_ncc
+                                         PQTypeName_ncc -> Identifier
+                                          Identifier -> TOK_NAME
+                                           TOK_NAME
+                                        UberCVQualifierSeqOpt
+                                       AbstractDeclaratorOpt
+                                    ------------- ambiguous TemplateArgumentList: 2 of 2 ------------
+                                     TemplateArgumentList -> TemplateArgumentListContinuation AssignmentExpression
+                                      TemplateArgumentListContinuation
+                                      AssignmentExpression -> ConditionalExpression
+                                       ConditionalExpression -> BinaryExpression
+                                        BinaryExpression -> BinExp_low
+                                         BinExp_low -> BinExp_mid
+                                          BinExp_mid -> BinExp_high
+                                           BinExp_high -> CastExpression
+                                            CastExpression -> UnaryExpression
+                                             UnaryExpression -> PostfixExpression
+                                              PostfixExpression -> PrimaryExpression
+                                               PrimaryExpression -> IdExpression
+                                                IdExpression -> PQualifiedId
+                                                 PQualifiedId -> UnqualifiedId
+                                                  UnqualifiedId -> Identifier
+                                                   Identifier -> TOK_NAME
+                                                    TOK_NAME
+                                    ----------- end of ambiguous TemplateArgumentList -----------
+                                   TOK_GREATERTHAN
+                   ----------- end of ambiguous TemplateArgumentList -----------
+                  TOK_GREATERTHAN
+               UberCVQualifierSeqOpt
+              AbstractDeclaratorOpt
+           ------------- ambiguous TemplateArgumentList: 2 of 2 ------------
+            TemplateArgumentList -> TemplateArgumentListContinuation AssignmentExpression
+             TemplateArgumentListContinuation
+             AssignmentExpression -> ConditionalExpression
+              ConditionalExpression -> BinaryExpression
+               BinaryExpression -> BinExp_low
+                BinExp_low -> BinExp_mid
+                 BinExp_mid -> BinExp_high
+                  BinExp_high -> CastExpression
+                   CastExpression -> UnaryExpression
+                    UnaryExpression -> PostfixExpression
+                     PostfixExpression -> PrimaryExpression
+                      PrimaryExpression -> IdExpression
+                       IdExpression -> PQualifiedId
+                        PQualifiedId -> UnqualifiedId
+                         UnqualifiedId -> TemplateId
+                          TemplateId -> Identifier TOK_LESSTHAN TemplateArgumentListOpt TOK_GREATERTHAN
+                           Identifier -> TOK_NAME
+                            TOK_NAME
+                           TOK_LESSTHAN
+                           TemplateArgumentListOpt -> TemplateArgumentList
+                            ------------- ambiguous TemplateArgumentList: 1 of 2 ------------
+                             TemplateArgumentList -> TemplateArgumentListContinuation TypeId
+                              TemplateArgumentListContinuation -> TemplateArgumentList TOK_COMMA
+                               ------------- ambiguous TemplateArgumentList: 1 of 2 ------------
+                                TemplateArgumentList -> TemplateArgumentListContinuation TypeId
+                                 TemplateArgumentListContinuation
+                                 TypeId -> TypeSpecifier AbstractDeclaratorOpt
+                                  TypeSpecifier -> PQTypeName UberCVQualifierSeqOpt
+                                   PQTypeName -> PQTypeName_ncc
+                                    PQTypeName_ncc -> Identifier
+                                     Identifier -> TOK_NAME
+                                      TOK_NAME
+                                   UberCVQualifierSeqOpt
+                                  AbstractDeclaratorOpt
+                               ------------- ambiguous TemplateArgumentList: 2 of 2 ------------
+                                TemplateArgumentList -> TemplateArgumentListContinuation AssignmentExpression
+                                 TemplateArgumentListContinuation
+                                 AssignmentExpression -> ConditionalExpression
+                                  ConditionalExpression -> BinaryExpression
+                                   BinaryExpression -> BinExp_low
+                                    BinExp_low -> BinExp_mid
+                                     BinExp_mid -> BinExp_high
+                                      BinExp_high -> CastExpression
+                                       CastExpression -> UnaryExpression
+                                        UnaryExpression -> PostfixExpression
+                                         PostfixExpression -> PrimaryExpression
+                                          PrimaryExpression -> IdExpression
+                                           IdExpression -> PQualifiedId
+                                            PQualifiedId -> UnqualifiedId
+                                             UnqualifiedId -> Identifier
+                                              Identifier -> TOK_NAME
+                                               TOK_NAME
+                               ----------- end of ambiguous TemplateArgumentList -----------
+                               TOK_COMMA
+                              TypeId -> TypeSpecifier AbstractDeclaratorOpt
+                               TypeSpecifier -> PQTypeName UberCVQualifierSeqOpt
+                                PQTypeName -> PQTypeName_ncc
+                                 PQTypeName_ncc -> TemplateId
+                                  TemplateId -> Identifier TOK_LESSTHAN TemplateArgumentListOpt TOK_GREATERTHAN
+                                   Identifier -> TOK_NAME
+                                    TOK_NAME
+                                   TOK_LESSTHAN
+                                   TemplateArgumentListOpt -> TemplateArgumentList
+                                    ------------- ambiguous TemplateArgumentList: 1 of 2 ------------
+                                     TemplateArgumentList -> TemplateArgumentListContinuation TypeId
+                                      TemplateArgumentListContinuation
+                                      TypeId -> TypeSpecifier AbstractDeclaratorOpt
+                                       TypeSpecifier -> PQTypeName UberCVQualifierSeqOpt
+                                        PQTypeName -> PQTypeName_ncc
+                                         PQTypeName_ncc -> Identifier
+                                          Identifier -> TOK_NAME
+                                           TOK_NAME
+                                        UberCVQualifierSeqOpt
+                                       AbstractDeclaratorOpt
+                                    ------------- ambiguous TemplateArgumentList: 2 of 2 ------------
+                                     TemplateArgumentList -> TemplateArgumentListContinuation AssignmentExpression
+                                      TemplateArgumentListContinuation
+                                      AssignmentExpression -> ConditionalExpression
+                                       ConditionalExpression -> BinaryExpression
+                                        BinaryExpression -> BinExp_low
+                                         BinExp_low -> BinExp_mid
+                                          BinExp_mid -> BinExp_high
+                                           BinExp_high -> CastExpression
+                                            CastExpression -> UnaryExpression
+                                             UnaryExpression -> PostfixExpression
+                                              PostfixExpression -> PrimaryExpression
+                                               PrimaryExpression -> IdExpression
+                                                IdExpression -> PQualifiedId
+                                                 PQualifiedId -> UnqualifiedId
+                                                  UnqualifiedId -> Identifier
+                                                   Identifier -> TOK_NAME
+                                                    TOK_NAME
+                                    ----------- end of ambiguous TemplateArgumentList -----------
+                                   TOK_GREATERTHAN
+                                UberCVQualifierSeqOpt
+                               AbstractDeclaratorOpt
+                            ------------- ambiguous TemplateArgumentList: 2 of 2 ------------
+                             TemplateArgumentList -> TemplateArgumentListContinuation AssignmentExpression
+                              TemplateArgumentListContinuation -> TemplateArgumentList TOK_COMMA
+                               ------------- ambiguous TemplateArgumentList: 1 of 2 ------------
+                                TemplateArgumentList -> TemplateArgumentListContinuation TypeId
+                                 TemplateArgumentListContinuation
+                                 TypeId -> TypeSpecifier AbstractDeclaratorOpt
+                                  TypeSpecifier -> PQTypeName UberCVQualifierSeqOpt
+                                   PQTypeName -> PQTypeName_ncc
+                                    PQTypeName_ncc -> Identifier
+                                     Identifier -> TOK_NAME
+                                      TOK_NAME
+                                   UberCVQualifierSeqOpt
+                                  AbstractDeclaratorOpt
+                               ------------- ambiguous TemplateArgumentList: 2 of 2 ------------
+                                TemplateArgumentList -> TemplateArgumentListContinuation AssignmentExpression
+                                 TemplateArgumentListContinuation
+                                 AssignmentExpression -> ConditionalExpression
+                                  ConditionalExpression -> BinaryExpression
+                                   BinaryExpression -> BinExp_low
+                                    BinExp_low -> BinExp_mid
+                                     BinExp_mid -> BinExp_high
+                                      BinExp_high -> CastExpression
+                                       CastExpression -> UnaryExpression
+                                        UnaryExpression -> PostfixExpression
+                                         PostfixExpression -> PrimaryExpression
+                                          PrimaryExpression -> IdExpression
+                                           IdExpression -> PQualifiedId
+                                            PQualifiedId -> UnqualifiedId
+                                             UnqualifiedId -> Identifier
+                                              Identifier -> TOK_NAME
+                                               TOK_NAME
+                               ----------- end of ambiguous TemplateArgumentList -----------
+                               TOK_COMMA
+                              AssignmentExpression -> ConditionalExpression
+                               ConditionalExpression -> BinaryExpression
+                                BinaryExpression -> BinExp_low
+                                 BinExp_low -> BinExp_mid
+                                  BinExp_mid -> BinExp_high
+                                   BinExp_high -> CastExpression
+                                    CastExpression -> UnaryExpression
+                                     UnaryExpression -> PostfixExpression
+                                      PostfixExpression -> PrimaryExpression
+                                       PrimaryExpression -> IdExpression
+                                        IdExpression -> PQualifiedId
+                                         PQualifiedId -> UnqualifiedId
+                                          UnqualifiedId -> TemplateId
+                                           TemplateId -> Identifier TOK_LESSTHAN TemplateArgumentListOpt TOK_GREATERTHAN
+                                            Identifier -> TOK_NAME
+                                             TOK_NAME
+                                            TOK_LESSTHAN
+                                            TemplateArgumentListOpt -> TemplateArgumentList
+                                             ------------- ambiguous TemplateArgumentList: 1 of 2 ------------
+                                              TemplateArgumentList -> TemplateArgumentListContinuation TypeId
+                                               TemplateArgumentListContinuation
+                                               TypeId -> TypeSpecifier AbstractDeclaratorOpt
+                                                TypeSpecifier -> PQTypeName UberCVQualifierSeqOpt
+                                                 PQTypeName -> PQTypeName_ncc
+                                                  PQTypeName_ncc -> Identifier
+                                                   Identifier -> TOK_NAME
+                                                    TOK_NAME
+                                                 UberCVQualifierSeqOpt
+                                                AbstractDeclaratorOpt
+                                             ------------- ambiguous TemplateArgumentList: 2 of 2 ------------
+                                              TemplateArgumentList -> TemplateArgumentListContinuation AssignmentExpression
+                                               TemplateArgumentListContinuation
+                                               AssignmentExpression -> ConditionalExpression
+                                                ConditionalExpression -> BinaryExpression
+                                                 BinaryExpression -> BinExp_low
+                                                  BinExp_low -> BinExp_mid
+                                                   BinExp_mid -> BinExp_high
+                                                    BinExp_high -> CastExpression
+                                                     CastExpression -> UnaryExpression
+                                                      UnaryExpression -> PostfixExpression
+                                                       PostfixExpression -> PrimaryExpression
+                                                        PrimaryExpression -> IdExpression
+                                                         IdExpression -> PQualifiedId
+                                                          PQualifiedId -> UnqualifiedId
+                                                           UnqualifiedId -> Identifier
+                                                            Identifier -> TOK_NAME
+                                                             TOK_NAME
+                                             ----------- end of ambiguous TemplateArgumentList -----------
+                                            TOK_GREATERTHAN
+                            ----------- end of ambiguous TemplateArgumentList -----------
+                           TOK_GREATERTHAN
+           ----------- end of ambiguous TemplateArgumentList -----------
+          TOK_GREATERTHAN
+       UberModifierSeqOpt
+      InitDeclaratorList -> InitDeclarator
+       InitDeclarator -> Declarator InitialiserOpt
+        Declarator -> DirectDeclarator
+         DirectDeclarator -> DirectDeclarator TOK_LPAREN ParameterDeclarationClause TOK_RPAREN CVQualifierSeqOpt ExceptionSpecificationOpt
+          DirectDeclarator -> IdExpression
+           IdExpression -> PQualifiedId
+            PQualifiedId -> UnqualifiedId
+             UnqualifiedId -> Identifier
+              Identifier -> TOK_NAME
+               TOK_NAME
+          TOK_LPAREN
+          ParameterDeclarationClause
+          TOK_RPAREN
+          CVQualifierSeqOpt
+          ExceptionSpecificationOpt
+        InitialiserOpt
+      TOK_SEMICOLON
  TOK_EOF
 ---- result ----
-(Merge (Type 1:1-1:6 FOOBAR) (NonType 1:1-1:6 FOOBAR))
----- result ----
-(Merge (Type 1:1-1:6 FOOBAR) (NonType 1:1-1:6 FOOBAR))
----- result ----
-Merge(FOOBAR,FOOBAR)
+(List 1:1-7:7 (Empty 1:1-0:-1)
+ (Block 1:1-7:7
+  (Defn 1:1-7:7
+   (Name 1:1-6:1
+    (Local 1:1-6:1
+     (TemplateId 1:1-6:1
+      (Identifier 1:1-6:1 __enable_if
+       ((Type 2:3-5:3 (Head 2:3-0:-1)
+         (TypeId 2:3-5:3
+          (Name 2:3-5:3
+           (Local 2:3-5:3
+            (TemplateId 2:3-5:3
+             (Identifier 2:3-5:3 ostreambuf_iterator
+              ((Type 3:5-4:23
+                (Tail 3:5-3:11
+                 (Merge
+                  (Type 3:5-3:10 (Head 3:5-0:-1)
+                   (TypeId 3:5-3:10
+                    (Name 3:5-3:10 (Local 3:5-3:10 (Id 3:5-3:10 _CharT)) ())
+                    ()))
+                  (NonType 3:5-3:10 (Head 3:5-0:-1)
+                   (ConditionalExpression 3:5-3:10
+                    (BinaryExpression 3:5-3:10
+                     (BinExp_mid 3:5-3:10
+                      (BinExp_high 3:5-3:10
+                       (CastExpression 3:5-3:10
+                        (UnaryExpression 3:5-3:10
+                         (PostfixExpression 3:5-3:10
+                          (PrimaryExpression 3:5-3:10
+                           (Variable 3:5-3:10
+                            (Id 3:5-3:10
+                             (Unqual 3:5-3:10 (Name 3:5-3:10 _CharT)))))))))))))))
+                (TypeId 4:5-4:23
+                 (Name 4:5-4:23
+                  (Local 4:5-4:23
+                   (TemplateId 4:5-4:23
+                    (Identifier 4:5-4:23 char_traits
+                     ((Merge
+                       (Type 4:17-4:22 (Head 4:17-0:-1)
+                        (TypeId 4:17-4:22
+                         (Name 4:17-4:22
+                          (Local 4:17-4:22 (Id 4:17-4:22 _CharT)) ())
+                         ()))
+                       (NonType 4:17-4:22 (Head 4:17-0:-1)
+                        (ConditionalExpression 4:17-4:22
+                         (BinaryExpression 4:17-4:22
+                          (BinExp_mid 4:17-4:22
+                           (BinExp_high 4:17-4:22
+                            (CastExpression 4:17-4:22
+                             (UnaryExpression 4:17-4:22
+                              (PostfixExpression 4:17-4:22
+                               (PrimaryExpression 4:17-4:22
+                                (Variable 4:17-4:22
+                                 (Id 4:17-4:22
+                                  (Unqual 4:17-4:22 (Name 4:17-4:22 _CharT))))))))))))))))))
+                  ())
+                 ()))))))
+           ())
+          ()))))))
+    ())
+   (Head 7:1-7:6
+    (Decl 7:1-7:6
+     (Direct 7:1-7:6
+      (FuncDecl 7:1-7:6
+       (IdDecl 7:1-7:3 (Id 7:1-7:3 (Unqual 7:1-7:3 (Name 7:1-7:3 foo)))) ()
+       () ()))
+     ())))))

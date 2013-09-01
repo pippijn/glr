@@ -8,6 +8,7 @@ install Program ".DEFAULT" [
   Modules [
     "Cc";
     "CcLexer";
+    "Cc_keywords";
   ];
 
   (* Library dependencies *)
