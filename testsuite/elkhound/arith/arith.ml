@@ -8,7 +8,7 @@ module Parser = Glr.Easy.Make
     let typed_ptree = false
     let treematch = false
     let user = true
-    let lrparse = true
+    let lrparse = false
   end)
 
 
