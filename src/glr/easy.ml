@@ -7,25 +7,30 @@ module type Config = sig
   val treematch : bool
   (* perform user actions *)
   val user : bool
+  (* use deterministic LALR(1) parser *)
+  val lrparse : bool
 end
 
+module type PtreeType = sig
+  module Ptree : Sig.ConvertibleType
+end
 
 module Make
   (Actions : UserActions.S)
   (Tables : ParseTablesType.S)
-  (Ptree : PtreeActions.S)
+  (Ptree : PtreeType)
   (PtreeAct : UserActions.S with type result = Ptree.Ptree.t)
-  (Treematch : PtreeActions.S)
+  (Treematch : PtreeType)
   (TreematchAct : UserActions.S with type result = Treematch.Ptree.t)
   (Tokens : TokenInfo.S)
   (Config : Config)
 = struct
 
-  let parse action filename actions tables lexer =
+  let glrparse action filename actions tables lexer lexbuf =
     let glr = Engine.create actions tables in
 
     try
-      action (Engine.parse glr lexer)
+      action (Engine.parse glr lexer lexbuf)
     with Engine.Located ((start_p, end_p), e, extra) ->
       let open Lexing in
       (* print source position *)
@@ -50,12 +55,23 @@ module Make
           print_endline extra
 
 
+  let lrparse action filename actions tables lexer lexbuf =
+    action (Lrparse.parse actions tables lexer lexbuf)
+
+
+  let parse action filename actions tables lexer lexbuf =
+    if Config.lrparse then
+      lrparse action filename actions tables lexer lexbuf
+    else
+      glrparse action filename actions tables lexer lexbuf
+
+
   let parse action filename token lexbuf =
     let tables = Tables.parseTables in
     let actions = Actions.userActions in
 
     let lexer = Lexerint.({
-      token = (fun () ->
+      token = (fun lexbuf ->
         let token = token lexbuf in
         let start_p = Lexing.lexeme_start_p lexbuf in
         let end_p = Lexing.lexeme_end_p lexbuf in
@@ -75,10 +91,10 @@ module Make
         PtreeNode.print_tree tree buf true;
         print_endline "---- result ----";
         print_string (Buffer.contents buf);
-      ) filename actions tables lexer
-    );
+      ) filename actions tables lexer lexbuf
+    )
     
-    if Config.typed_ptree then (
+    else if Config.typed_ptree then (
       let actions = PtreeAct.userActions in
 
       parse (fun tree ->
@@ -86,10 +102,10 @@ module Make
         Sexplib.Sexp.output_hum stdout
           (Ptree.Ptree.sexp_of_t tree);
         print_newline ();
-      ) filename actions tables lexer
-    );
+      ) filename actions tables lexer lexbuf
+    )
     
-    if Config.treematch then (
+    else if Config.treematch then (
       let actions = PtreeAct.userActions in
 
       parse (fun tree ->
@@ -97,14 +113,14 @@ module Make
         Sexplib.Sexp.output_hum stdout
           (Ptree.Ptree.sexp_of_t tree);
         print_newline ()
-      ) filename actions tables lexer
-    );
+      ) filename actions tables lexer lexbuf
+    )
     
-    if Config.user then (
+    else if Config.user then (
       parse (fun tree ->
         print_endline "---- result ----";
         action tree
-      ) filename actions tables lexer
+      ) filename actions tables lexer lexbuf
     )
 
 end

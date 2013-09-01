@@ -1,164 +1,114 @@
-(* lrparse.ml *)
-(* deterministic LALR(1) parser *)
+(* Deterministic LALR(1) parser. *)
 
-open Lexerint       (* tLexerInterface *)
-open ParseTables    (* actionTable, etc. *)
+let parse
+  (actions : 'result UserActions.t)
+  (tables  : ParseTables.t)
+  (lexer   : ('lexbuf, 'token) Lexerint.lexer)
+  (lexbuf  : 'lexbuf)
+: 'result =
 
+  let rec main_loop
+    (stack   : (ParseTables.state_id * SemanticValue.t) list)
+    (token   : 'token)
+  : 'result =
+    (* current state *)
+    let state = fst (List.hd stack) in
 
-type tStateId = int
+    let tokType = lexer.Lexerint.index token in
+    let tokSval = lexer.Lexerint.sval token in
 
-let debug = false
+    if Options._trace_parse () then
+      Printf.printf "state=%d tokType=%d\n"
+        state
+        tokType;
 
-let stateStack = ref (Array.make 10 0)
-let svalStack = ref (Array.make 10 (Obj.repr 0))
-let stackLen = ref 0
+    (* For small stacks, List.length is faster, for large
+     * stacks, an explicit match would be faster. *)
+    if tokType != ParseTables.eof_term || List.length stack > 2 then (
+      (* read from action table *)
+      let action = ParseTables.getActionEntry tables state tokType in
 
-let pushStateSval state sval =
-begin
-  if ((Array.length !stateStack) = !stackLen) then (
-    (* must make it bigger *)
-    let newStateStack = (Array.make (!stackLen * 2) 0) in
-    let newSvalStack = (Array.make (!stackLen * 2) (Obj.repr 0)) in
+      (* shift? *)
+      if ParseTables.isShiftAction tables action then (
 
-    (* copy *)
-    (Array.blit
-      !stateStack           (* source array *)
-      0                     (* source start position *)
-      newStateStack         (* dest array *)
-      0                     (* dest start position *)
-      !stackLen             (* number of elements to copy *)
-    );
-    (Array.blit
-      !svalStack            (* source array *)
-      0                     (* source start position *)
-      newSvalStack          (* dest array *)
-      0                     (* dest start position *)
-      !stackLen             (* number of elements to copy *)
-    );
+        (* destination state *)
+        let dest = ParseTables.decodeShift tables action tokType in
 
-    (* switch from old to new *)
-    stateStack := newStateStack;
-    svalStack := newSvalStack;
-  );
+        if Options._trace_parse () then
+          Printf.printf "shift to state %d\n" dest;
 
-  (* put new element into the stack at the end *)
-  (!stateStack).(!stackLen) <- state;
-  (!svalStack).(!stackLen) <- sval;
-  (incr stackLen);
-end
+        let stack = (dest, tokSval) :: stack in
 
-let topState() =
-begin
-  (!stateStack).(!stackLen - 1)
-end
+        (* next token *)
+        main_loop stack Lexerint.(lexer.token lexbuf)
 
-(*
-let parse lex tables actions =
-begin
+      (* reduce? *)
+      ) else if ParseTables.isReduceAction tables action then (
+
+        (* reduction rule *)
+        let rule = ParseTables.decodeReduce tables action state in
+        let rhsLen = ParseTables.getProdInfo_rhsLen tables rule in
+        let lhs = ParseTables.getProdInfo_lhsIndex tables rule in
+
+        (* make an array of semantic values for the action rule *)
+        let svalArray = Array.make rhsLen SemanticValue.null in
+
+        (* move svals from the stack into the sval array *)
+        let rec moveSvals svalArray i stack =
+          if i = 0 then
+            stack
+          else
+            match stack with
+            | (_, sval) :: tl ->
+                (*svalArray.(i - 1) <- sval;*)
+                (Obj.magic svalArray).(i - 1) <- (Obj.magic sval : int);
+                moveSvals svalArray (i - 1) tl
+            | [] -> assert false
+        in
+
+        let stack = moveSvals svalArray rhsLen stack in
+
+        (* invoke user's reduction action *)
+        let sval =
+          actions.UserActions.reductionAction rule svalArray
+            Lexing.dummy_pos Lexing.dummy_pos
+        in
+
+        let next = fst (List.hd stack) in
+
+        (* get new state *)
+        let dest = ParseTables.getGotoEntry tables next lhs in
+
+        if Options._trace_parse () then
+          Printf.printf "reduce by rule %d (len=%d, lhs=%d), goto state %d\n"
+            rule rhsLen lhs dest;
+
+        let stack = (dest, sval) :: stack in
+
+        (* same token *)
+        main_loop stack token
+
+      (* error? *)
+      ) else if ParseTables.isErrorAction tables action then (
+
+        Printf.printf "parse error in state %d\n" state;
+        failwith "parse error"
+
+      (* bad code (ambiguity)? *)
+      ) else (
+
+        failwith "bad action code"
+
+      )
+    ) else (
+
+      (* return value: sval of top element *)
+      SemanticValue.obj (snd (List.hd stack))
+
+    )
+  in
+
   (* initial state *)
-  (pushStateSval 0 (Obj.repr 0));
+  let stack = [(0, SemanticValue.null)] in
 
-  (* loop over all tokens until EOF and stack has just start symbol *)
-  while (not (Lexerint.(lex.index #getTokType()) = 0)) ||
-        (!stackLen > 2) do
-    let tt = (lex#getTokType()) in        (* token type *)
-    let state = (topState()) in      (* current state *)
-
-    (*
-    if (debug) then (
-      (Printf.printf "state=%d tokType=%d sval=%d desc=\"%s\"\n"
-                     state
-                     tt
-                     (lex#getIntSval())
-                     (lex#tokenDesc())
-                   );
-      (flush stdout);
-    );
-    *)
-
-    (* read from action table *)
-    let act = (getActionEntry tables state tt) in
-
-    (* shift? *)
-    if (isShiftAction tables act) then (
-      let dest = decodeShift tables act tt in   (* destination state *)
-      pushStateSval dest (Lexerint.(lex.token ()));
-
-      (* next token *)
-      (Lexerint.(lex.token ()));
-             
-      if (debug) then (
-        (Printf.printf "shift to state %d\n" dest);
-        (flush stdout);
-      );
-    )
-
-    (* reduce? *)
-    else if (isReduceAction tables act) then (
-      let rule = (decodeReduce tables act state) in    (* reduction rule *)
-      let ruleLen = (getProdInfo_rhsLen tables rule) in
-      let lhs = (getProdInfo_lhsIndex tables rule) in
-
-      (* make an array of semantic values for the action rule; this does
-       * an extra copy if we're already using a linear stack, but will
-       * be needed for GLR so I'll do it this way *)
-      let svalArray : Obj.t array = (Array.make ruleLen (Obj.repr 0)) in
-      (Array.blit
-        !svalStack            (* source array *)
-        (!stackLen - ruleLen) (* source start position *)
-        svalArray             (* dest array *)
-        0                     (* dest start position *)
-        ruleLen               (* number of elements to copy *)
-      );
-
-      (* invoke user's reduction action *)
-      let sval = (actions.reductionAction rule svalArray) in
-
-      (* pop 'ruleLen' elements *)
-      stackLen := (!stackLen - ruleLen);
-      let newTopState = (topState()) in
-
-      (* get new state *)
-      let dest = (decodeGoto (getGotoEntry tables newTopState lhs) lhs) in
-      (pushStateSval dest sval);
-
-      if (debug) then (
-        (Printf.printf "reduce by rule %d (len=%d, lhs=%d), goto state %d\n"
-                       rule ruleLen lhs dest);
-        (flush stdout);
-      );
-    )
-
-    (* error? *)
-    else if (isErrorAction act) then (
-      (Printf.printf "parse error in state %d\n" state);
-      (flush stdout);
-      (failwith "parse error");
-    )
-
-    (* bad code? *)
-    else (
-      (failwith "bad action code");
-    );
-  done;
-
-  (* print final parse stack *)
-  if (debug) then (
-    (Printf.printf "final parse stack (up is top):\n");
-    let i ref = ref (pred !stackLen) in
-    while (!i >= 0) do
-      (Printf.printf "  %d\n" (!stateStack).(!i));
-      (decr i);
-    done;
-    (flush stdout);
-  );
-
-  (* return value: sval of top element *)
-  let topSval = (!svalStack).(!stackLen - 1) in
-
-  topSval
-end
-
-
-(* EOF *)
-*)
+  main_loop stack Lexerint.(lexer.token lexbuf)

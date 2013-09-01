@@ -11,6 +11,7 @@ let parse_ptree choice file =
     let typed_ptree = choice = 1
     let treematch = choice = 2
     let user = choice = 3
+    let lrparse = false
   end) in
 
   let input = open_in file in

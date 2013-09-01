@@ -15,4 +15,4 @@ type 'result glr
 val stats : 'a glr -> stats
 
 val create : 'result UserActions.t -> ParseTablesType.t -> 'result glr
-val parse : 'result glr -> 'token Lexerint.lexer -> 'result
+val parse : 'result glr -> ('lexbuf, 'token) Lexerint.lexer -> 'lexbuf -> 'result

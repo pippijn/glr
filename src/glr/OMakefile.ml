@@ -18,5 +18,6 @@ install Package ".DEFAULT" [
   OCamlRequires [
     "corelib";
     "parsetables";
+    "ptree";
   ];
 ]

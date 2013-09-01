@@ -6,13 +6,11 @@ install Library ".DEFAULT" [
 
   (* Sources *)
   Modules [
+    "ActionOptions";
     "Lexerint";
     "Liststack";
     "ParseTables";
     "ParseTablesType";
-    "PtreeActions";
-    "PtreeNode";
-    "PtreeOptions";
     "SemanticValue";
     "SourceLocation";
     "TokenInfo";

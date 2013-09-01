@@ -2008,7 +2008,7 @@ end-to-end performance of the whole system. It does not actually return, but it
 has the same return type as the main entry point.
 <<ml>>=
 
-let rec main_loop (glr : 'result glr) lexer token : 'result =
+let rec main_loop (glr : 'result glr) lexer lexbuf token : 'result =
   if Options._trace_parse () then (
     let open Lexerint in
     let tokType = lexer.index token in
@@ -2050,7 +2050,7 @@ let rec main_loop (glr : 'result glr) lexer token : 'result =
 @
   Parse next token.
 <<ml>>=
-  main_loop glr lexer Lexerint.(lexer.token ())
+  main_loop glr lexer lexbuf Lexerint.(lexer.token lexbuf)
 
 @
 \subsection{Entry and exit of GLR parser}
@@ -2123,7 +2123,7 @@ let cleanupAfterParse (glr : 'result glr) : 'result =
   )
 
 
-let parse (glr : 'result glr) lexer : 'result =
+let parse (glr : 'result glr) lexer lexbuf : 'result =
   Id.reset ();
 
   if glr.globalNodeColumn <> 0 then
@@ -2144,7 +2144,7 @@ let parse (glr : 'result glr) lexer : 'result =
 @
     Get first token and start parsing.
 <<ml>>=
-    main_loop glr lexer Lexerint.(lexer.token ())
+    main_loop glr lexer lexbuf Lexerint.(lexer.token lexbuf)
 
   with End_of_file ->
 @

@@ -1,11 +1,6 @@
 (* given actions for a grammar, wrap them with actions that
  * just build a parse tree (forest) *)
 
-module type S = sig
-  module Ptree : Sig.ConvertibleType
-end
-
-
 let inject  : PtreeNode.t -> SemanticValue.t = Obj.magic
 let project : SemanticValue.t -> PtreeNode.t = Obj.magic
 
