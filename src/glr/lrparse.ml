@@ -6,6 +6,10 @@ let computeMaxRhsLen tables =
   ) 0 0 (ParseTables.getNumProds tables - 1)
 
 
+(**********************************************************
+ * :: LR engine with functional data structure (list)
+ **********************************************************)
+
 let parse
   (actions : 'result UserActions.t)
   (tables  : ParseTables.t)
