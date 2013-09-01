@@ -94,7 +94,7 @@ Relative to C++ implementation, what is not done:
 
 <<ml>>=
 
-module Colour = TermColour.Make(TermColour.HTML)
+module Colour = TermColour.Make(TermColour.ANSI)
 @
 We define our own versions of this exception, so that user code raising
 the ones in [[Pervasives]] will not interfere with parser internals.
@@ -314,6 +314,77 @@ module Id = struct
 end
 
 
+module Show = struct
+
+  let array f fmt =
+    Array.iter (Format.fprintf fmt "%a;@," f)
+
+  let array f fmt arr =
+    Format.fprintf fmt "[|@,%a|]"
+      (array f) arr
+
+  let list f fmt =
+    List.iter (Format.fprintf fmt "%a;@," f)
+
+  let list f fmt arr =
+    Format.fprintf fmt "[@,%a]"
+      (list f) arr
+
+  let option f fmt = function
+    | None -> Format.fprintf fmt "None"
+    | Some v -> Format.fprintf fmt "Some %a" f v
+
+  let rec sibling_link fmt v =
+    if v == Obj.magic () then
+      Format.fprintf fmt "<null>"
+    else
+      Format.fprintf fmt "{@,\
+                          @[<v2>sib = %a;@]@,}"
+        stack_node v.sib
+
+  and stack_node fmt v =
+    if v == Obj.magic () then
+      Format.fprintf fmt "<null>"
+    else
+      Format.fprintf fmt "{@,\
+                          @[<v2>state = %d;@]@,\
+                          @[<v2>leftSiblings = %a;@]@,\
+                          @[<v2>firstSib = %a;@]@,\
+                          @[<v2>referenceCount = %d;@]@,\
+                          @[<v2>determinDepth = %d;@]@,\
+                          @[<v2>column = %d;@]@,}"
+        (v.state :> int)
+        (list sibling_link) v.leftSiblings
+        sibling_link v.firstSib
+        v.referenceCount
+        v.determinDepth
+        v.column
+
+  let rec path fmt v =
+    if v == Obj.magic () then
+      Format.fprintf fmt "<null>"
+    else
+      Format.fprintf fmt "{@,\
+                          @[<v2>sibLinks = %a;@]@,\
+                          @[<v2>symbols = %a;@]@,\
+                          @[<v2>startStateId = %d;@]@,\
+                          @[<v2>prodIndex = %d;@]@,\
+                          @[<v2>rhsLen = %d;@]@,\
+                          @[<v2>startColumn = %d;@]@,\
+                          @[<v2>leftEdgeNode = %a;@]@,\
+                          @[<v2>next = %a;@]@,}"
+        (array sibling_link) v.sibLinks
+        (array Format.pp_print_int) v.symbols
+        v.startStateId
+        v.prodIndex
+        v.rhsLen
+        v.startColumn
+        stack_node v.leftEdgeNode
+        (option path) v.next
+
+end
+
+
 @
 \subsection{Front ends to user code}
 <<ml>>=
@@ -347,6 +418,7 @@ module User = struct
     else
       nonterminalName userAct (ParseTables.symAsNonterm sym)
 
+
 @
 \subsubsection{Symbol string representation}
 <<ml>>=
@@ -366,6 +438,7 @@ module User = struct
       showTerminalValue userAct (ParseTables.symAsTerm sym) sval
     else
       showNontermValue userAct (ParseTables.symAsNonterm sym) sval
+
 
 @
 \subsubsection{Semantic actions (reduce/merge/keep)}
@@ -406,11 +479,14 @@ module User = struct
   let duplicateTerminalValue userAct term sval =
     userAct.duplicateTerminalValue term sval
 
+
   let duplicateNontermValue userAct nonterm sval =
     userAct.duplicateNontermValue nonterm sval
 
+
   let duplicateSemanticValue userAct sym sval =
     assert (sym <> ParseTables.invalid_symbol);
+
 
 @
     The C++ implementation checks for NULL sval, but that
@@ -445,8 +521,10 @@ module User = struct
   let deallocateTerminalValue userAct term sval =
     userAct.deallocateTerminalValue term sval
 
+
   let deallocateNontermValue userAct nonterm sval =
     userAct.deallocateNontermValue nonterm sval
+
 
   let deallocateSemanticValue userAct sym sval =
     assert (sym <> ParseTables.invalid_symbol);
@@ -676,6 +754,7 @@ end = struct
     node.column <- glr.globalNodeColumn;
     node
 
+
 @
   Add the very first sibling.
 <<ml>>=
@@ -720,6 +799,7 @@ end = struct
     node.leftSiblings <- link :: node.leftSiblings;
 
     link
+
 
 @
   Add a new sibling by creating a new link.
@@ -821,11 +901,7 @@ module Path : sig
     -> StackNode.t
     -> unit
 
-  val next
-    : t
-    -> t option
-
-  val detach_queue
+  val dequeue
     : 'result glr
     -> t option
 
@@ -842,8 +918,10 @@ end = struct
     p.rhsLen <- rhsLen;
     p
 
+
   let delete glr p =
     Objpool.dealloc glr.pathPool p
+
 
 @
   Ensure the arrays have at least the given index.
@@ -880,6 +958,7 @@ end = struct
       ord1 - ord2
     )
 
+
 @
   Find the link where we want to insert the path.
 <<ml>>=
@@ -893,15 +972,18 @@ end = struct
 
   let insert_copy glr src leftEdge =
     let rhsLen = src.rhsLen in
+
 @
     Make a new node.
 <<ml>>=
     let p = create glr src.startStateId src.prodIndex rhsLen in
+
 @
     Fill in left edge info.
 <<ml>>=
     p.leftEdgeNode <- leftEdge;
     p.startColumn  <- leftEdge.column;
+
 @
     Copy path info.
 <<ml>>=
@@ -909,6 +991,7 @@ end = struct
       p.sibLinks.(i) <- src.sibLinks.(i);
       p.symbols .(i) <- src.symbols .(i);
     done;
+
 @
     Find proper place to insert new path.
 <<ml>>=
@@ -929,6 +1012,7 @@ end = struct
           Search.
 <<ml>>=
           let prev = search_pos glr p top in
+
 @
           Insert.
 <<ml>>=
@@ -937,14 +1021,12 @@ end = struct
         )
 
 
-  let next path =
-    path.next
-
-
-  let detach_queue glr =
-    let ret = glr.top in
-    glr.top <- None;
-    ret
+  let dequeue glr =
+    match glr.top with
+    | None -> None
+    | Some path as ret ->
+        glr.top <- path.next;
+        ret
 
 end
 
@@ -981,6 +1063,8 @@ module RWL : sig
     -> unit
 
 end = struct
+
+
 @
   Add a new parser to the [[active_parsers]] list, maintaining
   related invariants.
@@ -990,6 +1074,8 @@ end = struct
 
     Arraystack.push parsr glr.active_parsers;
     StackNode.inc_refcnt parsr
+
+
 @
   Same argument meanings as for [[recursiveEnqueue]].
 <<ml>>=
@@ -1068,6 +1154,8 @@ end = struct
     Deallocate prototype.
 <<ml>>=
     Path.delete glr proto
+
+
 @
   Returns number of actions.
 <<ml>>=
@@ -1350,15 +1438,11 @@ end = struct
     We dequeued it above, and are now done with it, so recycle
     it for future use.
 <<ml>>=
-    Path.delete glr path;
-
-    match Path.next path with
-    | None -> ()
-    | Some next -> recursiveProcess glr tokType start_p next
+    Path.delete glr path
 
 
   let rec processWorklist glr tokType start_p =
-    match Path.detach_queue glr with
+    match Path.dequeue glr with
     | None ->
 @
         Nothing to do.
@@ -1612,6 +1696,8 @@ module GLR : ParserCore = struct
 @
   Pulled out so I can use this block of statements in several places.
 <<ml>>=
+
+
   let parseToken glr tokType tokSval tokSloc =
     let open Lexerint in
 @
