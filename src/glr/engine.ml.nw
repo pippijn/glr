@@ -2129,14 +2129,8 @@ let makePath maxRhsLen () = {
 }
 
 
-let computeMaxRhsLen tables =
-  CoreInt.fold_left (fun len i ->
-    max len (ParseTables.getProdInfo_rhsLen tables i)
-  ) 0 0 (ParseTables.getNumProds tables - 1)
-
-
 let create userAct tables =
-  let maxRhsLen = computeMaxRhsLen tables in
+  let maxRhsLen = Lrparse.computeMaxRhsLen tables in
 
   {
     userAct;
