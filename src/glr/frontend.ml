@@ -133,8 +133,9 @@ module Make
 
   let lexer_from_dump input =
     let tokens =
-      with_dispose close_in
-        input_value (open_in_bin (input ^ ".tkd"))
+      Timing.time "loading tokens" (
+        with_dispose close_in input_value
+      ) (open_in_bin (input ^ ".tkd"))
     in
     lexer_from_list tokens, ignore
 
