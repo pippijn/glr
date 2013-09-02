@@ -8,7 +8,7 @@ module type LexerType = sig
 
   val token : lexbuf -> token * Lexing.position * Lexing.position
 
-  val from_channel : in_channel -> lexbuf
+  val from_channel : string -> in_channel -> lexbuf
 end
 
 exception ExitStatus of int
@@ -91,7 +91,7 @@ module Make
 
   let lrparse actions tables filename lexer =
     try
-      Some (Lrparse.parse actions tables lexer ())
+      Some (Timing.time ~alloc:true "parsing" (Lrparse.parse actions tables lexer) ())
     with
     | Failure msg ->
         Printf.printf "failure in user actions: %s\n\n" msg;
@@ -159,7 +159,7 @@ module Make
             let dispose _ = ignore (Unix.close_process_in cin) in
             (cin, dispose)
       in
-      (Lexer.from_channel cin, dispose)
+      (Lexer.from_channel input cin, dispose)
     in
 
     assert (not (FrontendOptions._load_toks ()));
