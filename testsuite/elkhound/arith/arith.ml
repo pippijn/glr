@@ -37,4 +37,4 @@ let main inputs =
 
 
 let () =
-  Cmdline.run ~args:["-useract"; "-lrparse"] main
+  Cmdline.run ~args:["-lrparse"] main

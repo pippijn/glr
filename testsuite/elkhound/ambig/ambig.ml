@@ -37,4 +37,4 @@ let main inputs =
 
 
 let () =
-  Cmdline.run ~args:["-useract"] main
+  Cmdline.run main
