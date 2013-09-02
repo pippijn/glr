@@ -1,26 +1,32 @@
-module Parser = Glr.Easy.Make
-  (SlessActions)(SlessTables)
-  (SlessPtree)(SlessPtreeActions)
-  (SlessTreematch)(SlessTreematchActions)
+module Parser = Glr.Frontend.Make
+  (SlessActions)
+  (SlessTables)
+  (SlessPtree)
+  (SlessPtreeActions)
+  (SlessTreematch)
+  (SlessTreematchActions)
   (SlessTokens)
   (struct
-    let ptree = false
-    let typed_ptree = false
-    let treematch = true
-    let user = false
-    let lrparse = false
+
+    type lexbuf = Lexing.lexbuf
+    type token = SlessTokens.t
+
+    let from_channel = Lexing.from_channel
+    let token lexbuf =
+      let token = SlessLexer.token lexbuf in
+      token,
+      Lexing.lexeme_start_p lexbuf,
+      Lexing.lexeme_end_p lexbuf
+
   end)
 
 
-let main =
-  List.iter (fun file ->
-    let input = open_in file in
-    let lexbuf = Lexing.from_channel input in
-
-    Parser.parse (fun () -> ()) file SlessLexer.token lexbuf
-  )
+let main inputs =
+  try
+    Parser.parse_files inputs
+  with Glr.Frontend.ExitStatus status ->
+    exit status
 
 
 let () =
-  Printexc.record_backtrace true;
-  Cmdline.run main
+  Cmdline.run ~args:["-tptree"; "-print"] main

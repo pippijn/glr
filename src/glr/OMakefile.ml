@@ -7,8 +7,9 @@ install Package ".DEFAULT" [
   (* Sources *)
   Modules [
     "Arraystack";
-    "Easy";
     "Engine";
+    "Frontend";
+    "FrontendOptions";
     "Lrparse";
     "Objpool";
     "Options";

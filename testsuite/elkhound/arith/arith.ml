@@ -1,26 +1,40 @@
-module Parser = Glr.Easy.Make
-  (ArithActions)(ArithTables)
-  (ArithPtree)(ArithPtreeActions)
-  (ArithTreematch)(ArithTreematchActions)
+module Parser = Glr.Frontend.Make
+  (ArithActions)
+  (ArithTables)
+  (ArithPtree)
+  (ArithPtreeActions)
+  (ArithTreematch)
+  (ArithTreematchActions)
   (ArithTokens)
   (struct
-    let ptree = false
-    let typed_ptree = false
-    let treematch = false
-    let user = true
-    let lrparse = true
+
+    type lexbuf = Lexing.lexbuf
+    type token = ArithTokens.t
+
+    let from_channel = Lexing.from_channel
+    let token lexbuf =
+      let token = ArithLexer.token lexbuf in
+      token,
+      Lexing.lexeme_start_p lexbuf,
+      Lexing.lexeme_end_p lexbuf
+
   end)
 
 
-let main =
-  List.iter (fun file ->
-    let input = open_in file in
-    let lexbuf = Lexing.from_channel input in
-
-    Parser.parse (Printf.printf "%d\n") file ArithLexer.token lexbuf
-  )
+let main inputs =
+  try
+    Parser.parse_files
+      ~action:(List.iter (fun (file, result) ->
+        match result with
+        | None -> ()
+        | Some result ->
+            print_endline "---- result ----";
+            Printf.printf "%d\n" result
+      ))
+      inputs
+  with Glr.Frontend.ExitStatus status ->
+    exit status
 
 
 let () =
-  Printexc.record_backtrace true;
-  Cmdline.run main
+  Cmdline.run ~args:["-useract"] main

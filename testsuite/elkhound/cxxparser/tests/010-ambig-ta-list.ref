@@ -69,20 +69,18 @@ __EarlyStartSymbol -> File TOK_EOF
        (NonType 1:36-1:41
         (UnqualifiedId 1:36-1:41 (Identifier 1:36-1:41 _CharT))))))))))
 ---- result ----
-(Identifier 1:1-1:44 ostreambuf_iterator
+(Identifier (0 0) ostreambuf_iterator
  (Merge
-  (Type 1:24-1:42
-   (TemplateId 1:24-1:42
-    (Identifier 1:24-1:42 char_traits
-     (Merge (Type 1:36-1:41 (Identifier 1:36-1:41 _CharT))
-      (NonType 1:36-1:41
-       (UnqualifiedId 1:36-1:41 (Identifier 1:36-1:41 _CharT)))))))
-  (NonType 1:24-1:42
-   (UnqualifiedId 1:24-1:42
-    (TemplateId 1:24-1:42
-     (Identifier 1:24-1:42 char_traits
-      (Merge (Type 1:36-1:41 (Identifier 1:36-1:41 _CharT))
-       (NonType 1:36-1:41
-        (UnqualifiedId 1:36-1:41 (Identifier 1:36-1:41 _CharT))))))))))
+  (Type (0 0)
+   (TemplateId (0 0)
+    (Identifier (0 0) char_traits
+     (Merge (Type (0 0) (Identifier (0 0) _CharT))
+      (NonType (0 0) (UnqualifiedId (0 0) (Identifier (0 0) _CharT)))))))
+  (NonType (0 0)
+   (UnqualifiedId (0 0)
+    (TemplateId (0 0)
+     (Identifier (0 0) char_traits
+      (Merge (Type (0 0) (Identifier (0 0) _CharT))
+       (NonType (0 0) (UnqualifiedId (0 0) (Identifier (0 0) _CharT))))))))))
 ---- result ----
 TemplateId(ostreambuf_iterator, Merge(TemplateId(char_traits, Merge(_CharT, _CharT)), TemplateId(char_traits, Merge(_CharT, _CharT))))

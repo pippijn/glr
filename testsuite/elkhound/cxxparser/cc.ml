@@ -1,34 +1,40 @@
-module Parser = Glr.Easy.Make
-  (CcActions)(CcTables)
-  (CcPtree)(CcPtreeActions)
-  (CcTreematch)(CcTreematchActions)
-  (CcTokens) 
+module Parser = Glr.Frontend.Make
+  (CcActions)
+  (CcTables)
+  (CcPtree)
+  (CcPtreeActions)
+  (CcTreematch)
+  (CcTreematchActions)
+  (CcTokens)
+  (struct
+
+    type lexbuf = Lexing.lexbuf
+    type token = CcTokens.t
+
+    let from_channel = Lexing.from_channel
+    let token lexbuf =
+      let token = CcLexer.token lexbuf in
+      token,
+      Lexing.lexeme_start_p lexbuf,
+      Lexing.lexeme_end_p lexbuf
+
+  end)
 
 
-let parse_ptree choice file =
-  let module Parser = Parser(struct
-    let ptree = choice = 0
-    let typed_ptree = choice = 1
-    let treematch = choice = 2
-    let user = choice = 3
-    let lrparse = false
-  end) in
-
-  let input = open_in file in
-  let lexbuf = Lexing.from_channel input in
-
-  Parser.parse print_endline file CcLexer.token lexbuf
-
-
-let main =
-  List.iter (fun file ->
-    parse_ptree 0 file;
-    parse_ptree 1 file;
-    parse_ptree 2 file;
-    parse_ptree 3 file;
-  )
+let main inputs =
+  try
+    Parser.parse_files
+      ~action:(List.iter (fun (file, result) ->
+        match result with
+        | None -> ()
+        | Some result ->
+            print_endline "---- result ----";
+            print_endline result
+      ))
+      inputs
+  with Glr.Frontend.ExitStatus status ->
+    exit status
 
 
 let () =
-  Printexc.record_backtrace true;
-  Cmdline.run main
+  Cmdline.run ~args:["-ptree"; "-tptree"; "-treematch"; "-useract"; "-print"] main
