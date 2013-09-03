@@ -1,0 +1,19 @@
+option shift_reduce_conflicts 1;
+
+
+terminals {
+   0 : TOK_EOF;
+   1 : A;
+}
+
+
+(* Highly ambiguous grammar: E -> E E | a *)
+nonterm(int) E {
+  fun merge (a, b) { a + b }
+
+  -> e1:E e2:R	 { e1 * e2 }
+  -> A		 { 1 }
+}
+
+(* XXX: hack for treematch brokenness *)
+nonterm R -> e:E;
