@@ -32,7 +32,13 @@ let proddecl_of_prod variant index prod =
 
   let action = BatOption.map CamlAst.loc_string_of_expr (Semantic.action_of_prod variant prod) in
 
-  ProdDecl (PDK_NEW, Some prod.pbase.name, rhs, action)
+  let name =
+    match prod.pbase.name with
+    | ("", _, _) -> None
+    | name -> Some name
+  in
+
+  ProdDecl (PDK_NEW, name, rhs, action)
 
 
 let specfunc_of_spec_func funcs = function
