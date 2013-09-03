@@ -9,8 +9,11 @@ let print_sloc out located =
 
 let print_termdecl out = function
   | TermDecl (code, name, None) ->
+      assert (Sloc.value name <> "");
       f out "  %3d : %a;\n" code print_sloc name
   | TermDecl (code, name, Some alias) ->
+      assert (Sloc.value name <> "");
+      assert (Sloc.value alias <> "");
       f out "  %3d : %a \"%a\";\n" code print_sloc name print_sloc alias
 
 let print_action_code out = function
@@ -21,6 +24,7 @@ let print_action_code out = function
 
 let print_specfunc out = function
   | SpecFunc (name, formals, code) ->
+      assert (Sloc.value name <> "");
       f out "  fun %a (" print_sloc name;
       ignore (List.fold_left (fun first formal ->
         if not first then
@@ -32,12 +36,16 @@ let print_specfunc out = function
 
 let print_type out = function
   | None -> ()
-  | Some ty -> f out "(%a)" print_sloc ty
+  | Some ty ->
+      assert (Sloc.value ty <> "");
+      f out "(%a)" print_sloc ty
 
 let print_termtype out = function
   | TermType (name, termtype, []) ->
+      assert (Sloc.value name <> "");
       f out "  token%a %a;\n" print_type (Some termtype) print_sloc name
   | TermType (name, termtype, funcs) ->
+      assert (Sloc.value name <> "");
       f out "  token%a %a {\n" print_type (Some termtype) print_sloc name;
       List.iter (print_specfunc out) funcs;
       f out "}\n"
@@ -50,21 +58,29 @@ let print_precspec out = function
 
 let print_tag out = function
   | None -> ()
-  | Some tag -> f out "%a:" print_sloc tag
+  | Some tag ->
+      assert (Sloc.value tag <> "");
+      f out "%a:" print_sloc tag
 
 let print_rhs out = function
   | RH_name (tag, name) ->
+      assert (Sloc.value name <> "");
       f out " %a%a" print_tag tag print_sloc name
   | RH_string (tag, str) ->
+      assert (Sloc.value str <> "");
       f out " %a\"%a\"" print_tag tag print_sloc str
   | RH_prec (tokName) ->
+      assert (Sloc.value tokName <> "");
       f out " prec (%a)" print_sloc tokName
   | RH_forbid (tokName) ->
+      assert (Sloc.value tokName <> "");
       f out " forbid_next (%a)" print_sloc tokName
 
 let print_prod_name out = function
   | None -> ()
-  | Some name -> f out " [%a]" print_sloc name
+  | Some name ->
+      assert (Sloc.value name <> "");
+      f out " [%a]" print_sloc name
 
 let print_rhs out = function
   | [] ->
@@ -105,6 +121,7 @@ let print_topform out = function
       f out "  }\n";
       f out "}\n\n"
   | TF_nonterm (name, semtype, funcs, prods, subsets) ->
+      assert (Sloc.value name <> "");
       f out "nonterm%a %a {\n" print_type semtype print_sloc name;
       List.iter (print_specfunc out) funcs;
       List.iter (print_proddecl out) prods;
