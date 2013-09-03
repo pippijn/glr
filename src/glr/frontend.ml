@@ -46,7 +46,7 @@ module Make
 
     let tree =
       try
-        Some (Timing.time ~alloc:true "parsing" (Engine.parse glr) lexer ())
+        Some (Timing.time ~alloc:true "parsing" (Engine.parse glr lexer) ())
       with Engine.Located ((start_p, end_p), e, extra) ->
         let open Lexing in
         (* print source position *)
