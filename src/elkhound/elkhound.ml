@@ -69,36 +69,33 @@ let grammar_graph dirname gram =
   let open GrammarType in
 
   let file = dirname ^ "/grammar.dot" in
-  Timing.progress "writing grammar graph to grammar.dot"
-    (GrammarGraph.visualise ~file gram.gram_index.nonterms) gram.gram_index.prods;
+  GrammarGraph.visualise ~file gram.gram_index.nonterms gram.gram_index.prods;
   gram
 
 
 let print_transformed dirname gram =
-  Timing.progress "writing transformed grammars to grammar.gr"
-    SemanticVariant.iter (fun variant ->
-      if variant == SemanticVariant.User then (
-        let file = dirname ^ "/grammar.gr" in
-        let ast = BackTransform.ast_of_gram gram variant in
-        BatPervasives.with_dispose ~dispose:close_out
-          (fun out -> PrintAst.print ~out ast) (open_out file)
-      )
-    );
+  SemanticVariant.iter (fun variant ->
+    if variant == SemanticVariant.User then (
+      let file = dirname ^ "/grammar.gr" in
+      let ast = BackTransform.ast_of_gram gram variant in
+      BatPervasives.with_dispose ~dispose:close_out
+        (fun out -> PrintAst.print ~out ast) (open_out file)
+    )
+  );
   gram
 
 
 let output_menhir dirname gram =
-  Timing.progress "writing menhir grammar to grammar.mly"
-    SemanticVariant.iter (fun variant ->
-      if variant == SemanticVariant.User then (
-        let file = dirname ^ "/grammar.mly" in
-        OutputMenhir.output_grammar ~file variant gram
-      )
-    );
+  SemanticVariant.iter (fun variant ->
+    if variant == SemanticVariant.User then (
+      let file = dirname ^ "/grammar.mly" in
+      OutputMenhir.output_grammar ~file variant gram
+    )
+  );
   gram
 
 
-let analyse gram =
+let run_analyses gram =
   let open GrammarType in
 
   let env, (states, tables) = GrammarAnalysis.run_analyses gram in
@@ -107,16 +104,14 @@ let analyse gram =
 
 let state_graph dirname (_, states, _ as tuple) =
   let file = dirname ^ "/automaton.dot" in
-  Timing.progress "writing automaton graph to automaton.dot"
-    (StateGraph.visualise ~file) states;
+  StateGraph.visualise ~file states;
   tuple
 
 
 let dump_automaton dirname (env, states, _ as tuple) =
   BatPervasives.with_dispose ~dispose:close_out
     (fun out ->
-      Timing.progress "dumping states to automaton.out"
-        (List.iter (PrintAnalysisEnv.print_item_set env out)) states
+      List.iter (PrintAnalysisEnv.print_item_set env out) states
     ) (Pervasives.open_out (dirname ^ "/automaton.out"));
   tuple
 
@@ -129,8 +124,7 @@ let emit_code dirname (env, states, tables) =
   let verbatims = env.verbatims in
 
   try
-    Timing.progress "emitting ML code"
-      (EmitCode.emit_ml dirname index verbatims ptree) tables
+    EmitCode.emit_ml dirname index verbatims ptree tables
   with Camlp4.PreCast.Loc.Exc_located (loc, e) ->
     Printf.printf "%s: Exception caught:\n  %s\n\n"
       (Camlp4.PreCast.Loc.to_string loc)
@@ -139,33 +133,51 @@ let emit_code dirname (env, states, tables) =
     exit 1
 
 
-let optional enabled f x = if enabled () then f x else x
+let phase name f x =
+  let result = Timing.progress name f x in
+  Diagnostics.exit_on_error ();
+  result
 
-let dirname s =
-  try
-    let point = String.rindex s '/' in
-    String.sub s 0 point
-  with Not_found ->
-    "."
+let optional enabled name f x = if enabled () then phase name f x else x
 
 
 let main inputs =
-  let dirname = dirname (List.hd inputs) in
+  let dirname =
+    try
+      match inputs with
+      | s :: _ ->
+          let point = String.rindex s '/' in
+          String.sub s 0 point
+      | [] ->
+          failwith "no inputs"
+    with Not_found ->
+      "."
+  in
 
   try
     inputs
-    |> Timing.progress "parsing grammar files" parse
-    |> Timing.progress "merging modules" merge
-    |> Timing.progress "extracting grammar structure" tree_parse
-    |> Timing.progress "parsing user actions" parse_actions
-    |> Timing.progress "adding parse tree actions" make_ptree
-    |> optional Options._graph_grammar (grammar_graph dirname)
-    |> optional Options._print_transformed (print_transformed dirname)
-    |> optional Options._output_menhir (output_menhir dirname)
-    |> analyse
-    |> optional Options._graph_automaton (state_graph dirname)
-    |> optional Options._dump_automaton (dump_automaton dirname)
-    |> Valgrind.Callgrind.instrumented (emit_code dirname)
+    |> phase "parsing grammar files" parse
+    |> phase "merging modules" merge
+    |> phase "extracting grammar structure" tree_parse
+    |> phase "parsing user actions" parse_actions
+    |> phase "adding parse tree actions" make_ptree
+
+    |> optional Options._graph_grammar "writing grammar graph to grammar.dot"
+         (grammar_graph dirname)
+    |> optional Options._print_transformed "writing transformed grammars to grammar.gr"
+         (print_transformed dirname)
+    |> optional Options._output_menhir "writing menhir grammar to grammar.mly"
+         (output_menhir dirname)
+
+    |> run_analyses
+
+    |> optional Options._graph_automaton "writing automaton graph to automaton.dot"
+         (state_graph dirname)
+    |> optional Options._dump_automaton "dumping states to automaton.out"
+         (dump_automaton dirname)
+
+    |> phase "emitting ML code" (emit_code dirname)
+
   with Diagnostics.Exit ->
     Diagnostics.print ();
     Printf.printf "Exiting on error\n";
