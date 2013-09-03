@@ -53,7 +53,7 @@ let changed_items prods item_set =
       None
 
 
-let production_closure env finished worklist item b prod_index =
+let production_closure env finished item b worklist prod_index =
   let open GrammarType in
 
   let prod = ProdArray.get env.index.prods prod_index in
@@ -150,15 +150,18 @@ let production_closure env finished worklist item b prod_index =
            * lookahead changed *)
           DottedProduction.Table.remove finished already.dprod;
           assert (already.dprod.back_pointer == None); (* was not on the worklist *)
-          Stack.push already worklist;
           already.dprod.back_pointer <- Some already; (* now is on worklist *)
+          already :: worklist
+
         ) else (
           (* 'already' is in the worklist, so that's fine *)
+          worklist
         )
       ) else (
         if Options._trace_closure () then (
           print_endline "      the dprod already existed";
         );
+        worklist
       )
 
   | None ->
@@ -173,9 +176,9 @@ let production_closure env finished worklist item b prod_index =
         print_endline "      this dprod is new, queueing it to add";
       );
 
-      Stack.push new_item worklist;
       assert (new_item.dprod.back_pointer == None);
-      new_item.dprod.back_pointer <- Some new_item
+      new_item.dprod.back_pointer <- Some new_item;
+      new_item :: worklist
 
 
 let single_item_closure env finished worklist item =
@@ -196,18 +199,23 @@ let single_item_closure env finished worklist item =
       (* dot is at the end *)
       if Options._trace_closure () then (
         print_endline "    dot is at the end"
-      )
+      );
+
+      worklist
 
   | Some (Terminal _) ->
       (* symbol after the dot is a terminal *)
       if Options._trace_closure () then (
         print_endline "    symbol after the dot is a terminal"
-      )
+      );
+
+      worklist
 
   | Some (Nonterminal (_, b)) ->
       (* for each production "B -> gamma" *)
-      List.iter
-        (production_closure env finished worklist item b)
+      List.fold_left
+        (production_closure env finished item b)
+        worklist
         (NtArray.get env.prods_by_lhs b)
 
 
@@ -218,7 +226,7 @@ let item_set_closure env item_set =
 
   (* every 'item' on the worklist has item.dprod.back_pointer = Some item;
    * every 'dprod' not associated has dprod.back_pointer = None *)
-  let worklist = Stack.create () in
+  let worklist = [] in
 
   if Options._trace_closure () then (
     print_string "%%% computing closure of ";
@@ -237,24 +245,36 @@ let item_set_closure env item_set =
   item_set.nonkernel_items <- [];
 
   (* first, close the kernel items -> worklist *)
-  List.iter (fun item ->
-    single_item_closure env finished worklist item
-  ) item_set.kernel_items.items;
+  let worklist =
+    List.fold_left
+      (single_item_closure env finished)
+      worklist item_set.kernel_items.items
+  in
 
-  while not (Stack.is_empty worklist) do
-    (* pull the first production *)
-    let item = Stack.pop worklist in
-    assert (DottedProduction.back_pointer item.dprod == item); (* was on worklist *)
-    item.dprod.back_pointer <- None; (* now off worklist *)
+  let rec inner_item_set_closure = function
+    | item :: worklist ->
+        (* pull the first production *)
+        assert (DottedProduction.back_pointer item.dprod == item); (* was on worklist *)
+        item.dprod.back_pointer <- None; (* now off worklist *)
 
-    (* put it into list of 'done' items; this way, if this
-     * exact item is generated during closure, it will be
-     * seen and re-inserted (instead of duplicated) *)
-    DottedProduction.Table.add finished item.dprod item;
+        (* put it into list of 'done' items; this way, if this
+         * exact item is generated during closure, it will be
+         * seen and re-inserted (instead of duplicated) *)
+        DottedProduction.Table.add finished item.dprod item;
 
-    (* close it -> worklist *)
-    single_item_closure env finished worklist item
-  done;
+        (* close it -> worklist *)
+        let worklist =
+          single_item_closure env finished worklist item
+        in
+
+        (* work on the new worklist *)
+        inner_item_set_closure worklist
+
+    | [] ->
+        ()
+  in
+
+  inner_item_set_closure worklist;
 
   (* move everything from 'finished' to the nonkernel items list *)
   item_set.nonkernel_items <-
