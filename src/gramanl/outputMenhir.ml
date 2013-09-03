@@ -1,3 +1,4 @@
+open CorePervasives
 open GrammarStructure
 open GrammarType
 
@@ -78,10 +79,8 @@ let output_production out variant index prod_index =
   );
   match Semantic.action_of_prod variant prod with
   | None ->
-      let sym = PtreeMaker.right_symbol prod in
-      let tag = GrammarUtil.tag_of_symbol sym in
-      assert (tag != None);
-      Printf.fprintf out "\t{ %a }\n" output_tag tag
+      failwith "production without semantic action"
+
   | Some action ->
       Printf.fprintf out "\t{ %s }\n" (CamlAst.string_of_expr action)
 

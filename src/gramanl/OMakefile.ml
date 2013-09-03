@@ -91,6 +91,7 @@ install Package ".DEFAULT" [
     "emitTokens.ml",		"-pp camlp4of";
     "grammarAst.ml",		"-syntax camlp4o";
     "grammarType.ml",		"-syntax camlp4o";
+    "grammarTreeParser.ml",	"-pp camlp4of";
     "merge.ml",			"-syntax camlp4o";
     "ptreeMaker.ml",		"-pp camlp4of";
     "ptreeType.ml",		"-syntax camlp4o";

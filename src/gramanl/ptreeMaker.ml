@@ -102,7 +102,7 @@ let nonterminal variant reachable nonterm =
 
   let semtype =
     if not is_reachable then
-      let _loc = ghost 102 in
+      let _loc = ghost 105 in
       <:ctyp<unit>>
     else if Ids.Nonterminal.is_start nonterm.nbase.index_id then
       (* synthesised start symbol *)
@@ -116,12 +116,16 @@ let nonterminal variant reachable nonterm =
       Some (`SEM_TYPE semtype);
 
       if not is_reachable then
+        (* No merge for unreachable nonterminals. *)
         None
       else
+        (* Only emit a merge function if the user
+         * actions also had one. *)
         BatOption.map (merge nonterm.nbase.name)
           (Semantic.merge_of_nonterm SemanticVariant.User nonterm);
 
       if not is_reachable then
+        (* No show for unreachable nonterminals. *)
         None
       else
         show nonterm.nbase.name;

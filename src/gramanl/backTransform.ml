@@ -30,7 +30,13 @@ let proddecl_of_prod variant index prod =
     ) prod.right
   in
 
-  let action = BatOption.map CamlAst.loc_string_of_expr (Semantic.action_of_prod variant prod) in
+  let action =
+    match Semantic.action_of_prod variant prod with
+    | None ->
+        failwith "production without semantic action"
+    | Some action ->
+        Some (CamlAst.loc_string_of_expr action)
+  in
 
   let name =
     match prod.pbase.name with

@@ -345,11 +345,55 @@ let collect_production_rhs aliases terminals nonterminals is_synthesised rhs_lis
   { production with right = List.rev production.right }
 
 
+let collect_rhs_tags =
+  List.fold_left (fun tags -> function
+    | RH_name (Some tag, _)
+    | RH_string (Some tag, _) ->
+        tag :: tags
+    | _ -> tags
+  ) []
+
+
+let parse_action _loc rhs_list action =
+  SemanticVariant.(of_list User [
+    Some (`SEM_ACTION (
+      match action with
+      | Some action ->
+          (* Parse user action. *)
+          CamlAst.expr_of_loc_string action
+
+      (* TODO: This should be moved to another step,
+       * not in tree parsing. *)
+      | None ->
+          let lid id =
+            let _loc, id = Sloc._loc id in
+            <:expr<$lid:id$>>
+          in
+          (* Return tuple of all tagged rhs elements
+           * or unit if nothing is tagged. *)
+          match collect_rhs_tags rhs_list with
+          | [] ->
+              (* No rhs => return unit. *)
+              <:expr<()>>
+          | [tag] ->
+              (* One symbol => return only the symbol. *)
+              lid tag
+          | tag :: tags ->
+              (* Multiple symbols => return a tuple. *)
+              Ast.ExTup (_loc,
+                List.fold_left (fun com tag ->
+                  Ast.ExCom (_loc, com, lid tag)
+                ) (lid tag) tags
+              )
+    ))
+  ])
+
+
 let collect_productions aliases terminals nonterminals nonterms =
   let last_prod_index =
     LocStringMap.fold (fun _ (nterm, _) next_prod_index ->
       match nterm with
-      | TF_nonterm (name, _, _, prods, _) ->
+      | TF_nonterm (_, _, _, prods, _) ->
           List.fold_left (fun next_prod_index _ ->
             next_prod_index + 1
           ) next_prod_index prods
@@ -360,16 +404,18 @@ let collect_productions aliases terminals nonterminals nonterms =
   let productions, first_prod_index =
     LocStringMap.fold (fun _ (nterm, _) (productions, next_prod_index) ->
       match nterm with
-      | TF_nonterm (name, _, _, prods, _) ->
-          let left = (LocStringMap.find name nonterminals).nbase.index_id in
+      | TF_nonterm (lhs_name, _, _, prods, _) ->
+          let left = (LocStringMap.find lhs_name nonterminals).nbase.index_id in
           (* is this the special start symbol I inserted? *)
-          let is_synthesised = name == start_name in
+          let is_synthesised = lhs_name == start_name in
 
-          List.fold_left (fun (productions, next_prod_index) (ProdDecl (kind, name, rhs, action)) ->
+          let collect
+            (productions, next_prod_index)
+            (ProdDecl (kind, prod_name, rhs_list, action))
+          =
             let semantic =
-              SemanticVariant.(of_list User [
-                BatOption.map (fun action -> `SEM_ACTION (CamlAst.expr_of_loc_string action)) action;
-              ])
+              let _loc, _ = Sloc._loc lhs_name in
+              parse_action _loc rhs_list action
             in
 
             let prod_index = Ids.Production.of_int (next_prod_index - 1) in
@@ -378,19 +424,29 @@ let collect_productions aliases terminals nonterminals nonterms =
             let production =
               { empty_production with
                 pbase = {
-                  name = BatOption.default Sloc.empty_string name;
+                  name = BatOption.default Sloc.empty_string prod_name;
                   index_id = prod_index;
                   semantic;
                 };
                 left;
               }
               (* deal with RHS elements *)
-              |> collect_production_rhs aliases terminals nonterminals is_synthesised rhs
+              |> collect_production_rhs
+                   aliases
+                   terminals
+                   nonterminals
+                   is_synthesised
+                   rhs_list
             in
 
             (* add production to grammar *)
             production :: productions, next_prod_index - 1
-          ) (productions, next_prod_index) prods
+          in
+
+          List.fold_left
+            collect
+            (productions, next_prod_index)
+            prods
 
       | _ -> failwith "merge failed"
     ) nonterms ([], last_prod_index)

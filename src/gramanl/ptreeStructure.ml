@@ -31,11 +31,6 @@ let ctyp_of_symbol index = function
   | Terminal    (_,    term) -> ctyp_of_terminal index.terms term
 
 
-let ctyp_of_right_symbol index head_tail =
-  PtreeMaker.right_symbol head_tail
-  |> ctyp_of_symbol index
-
-
 (* XXX: if this function changes its output, PtreeMaker.prods probably
  * also needs to change *)
 let production_types index term_mods left has_merge prods =

@@ -82,7 +82,12 @@ let () =
     if !_module_prefix = "" then (
       let name = List.hd inputs in
 
-      let slash = String.rindex name '/' + 1 in
+      let slash =
+        try
+          String.rindex name '/' + 1
+        with Not_found ->
+          0
+      in
       let point = String.rindex name '.' in
       let name = String.sub name slash (point - slash) in
 

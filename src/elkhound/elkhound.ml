@@ -73,10 +73,12 @@ let grammar_graph dirname gram =
 let print_transformed dirname gram =
   Timing.progress "writing transformed grammars to grammar.gr"
     SemanticVariant.iter (fun variant ->
-      let file = dirname ^ "/grammar.gr" in
-      let ast = BackTransform.ast_of_gram gram variant in
-      BatPervasives.with_dispose ~dispose:close_out
-        (fun out -> PrintAst.print ~out ast) (open_out file);
+      if variant == SemanticVariant.User then (
+        let file = dirname ^ "/grammar.gr" in
+        let ast = BackTransform.ast_of_gram gram variant in
+        BatPervasives.with_dispose ~dispose:close_out
+          (fun out -> PrintAst.print ~out ast) (open_out file)
+      )
     );
   gram
 
@@ -84,8 +86,10 @@ let print_transformed dirname gram =
 let output_menhir dirname gram =
   Timing.progress "writing menhir grammar to grammar.mly"
     SemanticVariant.iter (fun variant ->
-      let file = dirname ^ "/grammar.mly" in
-      OutputMenhir.output_grammar ~file variant gram
+      if variant == SemanticVariant.User then (
+        let file = dirname ^ "/grammar.mly" in
+        OutputMenhir.output_grammar ~file variant gram
+      )
     );
   gram
 
