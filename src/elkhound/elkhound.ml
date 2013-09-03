@@ -126,19 +126,22 @@ let emit_code dirname (env, states, tables) =
   try
     EmitCode.emit_ml dirname index verbatims ptree tables
   with Camlp4.PreCast.Loc.Exc_located (loc, e) ->
-    Printf.printf "%s: Exception caught:\n  %s\n\n"
-      (Camlp4.PreCast.Loc.to_string loc)
-      (Printexc.to_string e);
-    Printexc.print_backtrace stdout;
-    exit 1
+    Printf.printf "%s: Exception raised\n"
+      (Camlp4.PreCast.Loc.to_string loc);
+    raise e
 
 
 let phase name f x =
   let result = Timing.progress name f x in
+  Diagnostics.print ();
   Diagnostics.exit_on_error ();
   result
 
-let optional enabled name f x = if enabled () then phase name f x else x
+let optional enabled name f x =
+  if enabled () then
+    phase name f x
+  else
+    x
 
 
 let main inputs =
@@ -162,25 +165,29 @@ let main inputs =
     |> phase "parsing user actions" parse_actions
     |> phase "adding parse tree actions" make_ptree
 
-    |> optional Options._graph_grammar "writing grammar graph to grammar.dot"
+    |> optional Options._graph_grammar
+         "writing grammar graph to grammar.dot"
          (grammar_graph dirname)
-    |> optional Options._print_transformed "writing transformed grammars to grammar.gr"
+    |> optional Options._print_transformed
+         "writing transformed grammars to grammar.gr"
          (print_transformed dirname)
-    |> optional Options._output_menhir "writing menhir grammar to grammar.mly"
+    |> optional Options._output_menhir
+         "writing menhir grammar to grammar.mly"
          (output_menhir dirname)
 
     |> run_analyses
 
-    |> optional Options._graph_automaton "writing automaton graph to automaton.dot"
+    |> optional Options._graph_automaton
+         "writing automaton graph to automaton.dot"
          (state_graph dirname)
-    |> optional Options._dump_automaton "dumping states to automaton.out"
+    |> optional Options._dump_automaton
+         "dumping states to automaton.out"
          (dump_automaton dirname)
 
-    |> phase "emitting ML code" (emit_code dirname)
+    |> phase "emitting ML code"
+         (emit_code dirname)
 
   with Diagnostics.Exit ->
-    Diagnostics.print ();
-    Printf.printf "Exiting on error\n";
     exit 1
 
 

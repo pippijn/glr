@@ -6,7 +6,6 @@ install Package ".DEFAULT" [
 
   (* Sources *)
   Modules [
-    "AnalysisEnv";
     "AnalysisEnvType";
     "Assoc";
     "BackTransform";
