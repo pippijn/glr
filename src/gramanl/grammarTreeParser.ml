@@ -345,48 +345,15 @@ let collect_production_rhs aliases terminals nonterminals is_synthesised rhs_lis
   { production with right = List.rev production.right }
 
 
-let collect_rhs_tags =
-  List.fold_left (fun tags -> function
-    | RH_name (Some tag, _)
-    | RH_string (Some tag, _) ->
-        tag :: tags
-    | _ -> tags
-  ) []
-
-
-let parse_action _loc rhs_list action =
-  SemanticVariant.(of_list User [
-    Some (`SEM_ACTION (
-      match action with
-      | Some action ->
-          (* Parse user action. *)
-          CamlAst.expr_of_loc_string action
-
-      (* TODO: This should be moved to another step,
-       * not in tree parsing. *)
-      | None ->
-          let lid id =
-            let _loc, id = Sloc._loc id in
-            <:expr<$lid:id$>>
-          in
-          (* Return tuple of all tagged rhs elements
-           * or unit if nothing is tagged. *)
-          match collect_rhs_tags rhs_list with
-          | [] ->
-              (* No rhs => return unit. *)
-              <:expr<()>>
-          | [tag] ->
-              (* One symbol => return only the symbol. *)
-              lid tag
-          | tag :: tags ->
-              (* Multiple symbols => return a tuple. *)
-              Ast.ExTup (_loc,
-                List.fold_left (fun com tag ->
-                  Ast.ExCom (_loc, com, lid tag)
-                ) (lid tag) tags
-              )
-    ))
-  ])
+let parse_action action =
+  SemanticVariant.(of_option User (
+    (* Don't parse the action, yet, we'll do that later.
+     * Now, we just return the action code as string. *)
+    BatOption.map (fun action ->
+      let _loc, action = Sloc._loc action in
+      `SEM_ACTION <:expr<$str:action$>>
+    ) action
+  ))
 
 
 let collect_productions aliases terminals nonterminals nonterms =
@@ -413,10 +380,7 @@ let collect_productions aliases terminals nonterminals nonterms =
             (productions, next_prod_index)
             (ProdDecl (kind, prod_name, rhs_list, action))
           =
-            let semantic =
-              let _loc, _ = Sloc._loc lhs_name in
-              parse_action _loc rhs_list action
-            in
+            let semantic = parse_action action in
 
             let prod_index = Ids.Production.of_int (next_prod_index - 1) in
 

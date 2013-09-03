@@ -16,6 +16,16 @@ let symbols_of_production prod =
   ) prod.right []
 
 
+let tags_of_production prod =
+  List.fold_right (fun sym tags ->
+    match sym with
+    | Terminal (Some tag, _)
+    | Nonterminal (Some tag, _) -> tag :: tags
+
+    | _ -> tags
+  ) prod.right []
+
+
 let is_tail_of tail head_tail =
   let tail_syms = symbols_of_production tail in
   let head_tail_syms = symbols_of_production head_tail in

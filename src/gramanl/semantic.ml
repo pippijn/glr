@@ -30,6 +30,16 @@ let is_action : prod_semantic -> CamlAst.expr option = function
 let action_of_prod variant prod =
   SemanticVariant.find variant is_action prod.pbase.semantic
 
+let replace_action variant prod action =
+  { prod with
+    pbase = { prod.pbase with
+      semantic = SemanticVariant.replace variant
+        (fun sem -> is_action sem != None)
+        (`SEM_ACTION action)
+        prod.pbase.semantic;
+    }
+  }
+
 
 let is_merge : nonterm_semantic -> spec_func option = function
   | `SEM_MERGE func ->

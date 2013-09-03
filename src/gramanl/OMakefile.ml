@@ -46,6 +46,7 @@ install Package ".DEFAULT" [
     "NtSet";
     "Options";
     "OutputMenhir";
+    "ParseActions";
     "PrintAnalysisEnv";
     "PrintAst";
     "PrintGrammar";
@@ -93,6 +94,7 @@ install Package ".DEFAULT" [
     "grammarType.ml",		"-syntax camlp4o";
     "grammarTreeParser.ml",	"-pp camlp4of";
     "merge.ml",			"-syntax camlp4o";
+    "parseActions.ml",		"-pp camlp4of";
     "ptreeMaker.ml",		"-pp camlp4of";
     "ptreeType.ml",		"-syntax camlp4o";
     "semanticVariant.ml",	"-syntax camlp4o";

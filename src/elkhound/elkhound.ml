@@ -47,17 +47,21 @@ let merge grammars =
 
 
 let tree_parse topforms =
-  let open GrammarType in
-
   let grammar = GrammarTreeParser.of_ast topforms in
   if false then
     print_grammar grammar;
   grammar
 
 
+let parse_actions grammar =
+  let open GrammarType in
+  { grammar with
+    productions = ParseActions.parse_actions grammar.productions;
+  }
+
+
 let make_ptree grammar =
-  let gram = GrammarStructure.make grammar in
-  gram
+  GrammarStructure.make grammar
 
 
 let grammar_graph dirname gram =
@@ -153,6 +157,7 @@ let main inputs =
     |> Timing.progress "parsing grammar files" parse
     |> Timing.progress "merging modules" merge
     |> Timing.progress "extracting grammar structure" tree_parse
+    |> Timing.progress "parsing user actions" parse_actions
     |> Timing.progress "adding parse tree actions" make_ptree
     |> optional Options._graph_grammar (grammar_graph dirname)
     |> optional Options._print_transformed (print_transformed dirname)
@@ -162,6 +167,7 @@ let main inputs =
     |> optional Options._dump_automaton (dump_automaton dirname)
     |> Valgrind.Callgrind.instrumented (emit_code dirname)
   with Diagnostics.Exit ->
+    Diagnostics.print ();
     Printf.printf "Exiting on error\n";
     exit 1
 

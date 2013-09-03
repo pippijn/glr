@@ -27,13 +27,13 @@ let prefix_for_variant_kind = function
   | Treematch -> "Treematch"
 
 
-let get which variants =
+let get_variant which variants =
   match which, variants with
   | User     , (user, ptree, treematch) -> user
   | Ptree    , (user, ptree, treematch) -> ptree
   | Treematch, (user, ptree, treematch) -> treematch
 
-let set which variants value =
+let set_variant which variants value =
   match which, variants with
   | User     , (user, ptree, treematch) -> (value, ptree, treematch)
   | Ptree    , (user, ptree, treematch) -> (user, value, treematch)
@@ -48,11 +48,11 @@ let rec find f = function
       | Some _ as some -> some
 
 let find which f variants =
-  find f (get which variants)
+  find f (get_variant which variants)
 
 let add which sem variants =
-  set which variants
-    (sem :: get which variants)
+  set_variant which variants
+    (sem :: get_variant which variants)
 
 let add_option which sem variants =
   match sem with
@@ -60,16 +60,36 @@ let add_option which sem variants =
   | Some sem -> add which sem variants
 
 let set_list which sems variants =
-  if get which variants <> [] then
+  if get_variant which variants <> [] then
     failwith "attempted to replace existing semantic information"
   else
-    set which variants sems
+    set_variant which variants sems
+
+let replace which why update variants =
+  match get_variant which variants with
+  | [] ->
+      set_list which [update] variants
+  | sems ->
+      let rec set_loop updated = function
+        | [] ->
+            update :: updated
+        | sem :: sems ->
+            if why sem then
+              update :: (updated @ sems)
+            else
+              set_loop (sem :: updated) sems
+      in
+      set_variant which variants (set_loop [] sems)
+
+let map which f variants =
+  set_variant which variants
+    (List.map f (get_variant which variants))
 
 
 let empty () = ([], [], [])
 
 let singleton which sem =
-  set which (empty ()) [sem]
+  set_variant which (empty ()) [sem]
 
 let of_list which sems =
   let sems =
@@ -79,7 +99,10 @@ let of_list which sems =
     ) [] sems
   in
 
-  set which (empty ()) sems
+  set_variant which (empty ()) sems
+
+let of_option which sem =
+  of_list which [sem]
 
 
 let combine a b =

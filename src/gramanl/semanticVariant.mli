@@ -15,9 +15,12 @@ val find       : variant_kind -> ('semantic -> 'a option) -> 'semantic variants 
 val add        : variant_kind -> 'semantic -> 'semantic variants -> 'semantic variants
 val add_option : variant_kind -> 'semantic option -> 'semantic variants -> 'semantic variants
 val set_list   : variant_kind -> 'semantic list -> 'semantic variants -> 'semantic variants
+val replace    : variant_kind -> ('semantic -> bool) -> 'semantic -> 'semantic variants -> 'semantic variants
+val map        : variant_kind -> ('semantic -> 'semantic) -> 'semantic variants -> 'semantic variants
 
 val empty : unit -> 'a variants
 val singleton : variant_kind -> 'a -> 'a variants
 val of_list : variant_kind -> 'a option list -> 'a variants
+val of_option : variant_kind -> 'a option -> 'a variants
 
 val combine : 'semantic variants -> 'semantic variants -> 'semantic variants
