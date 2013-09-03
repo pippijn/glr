@@ -1,3 +1,6 @@
+<<ml>>=
+module Colour = TermColour.Make(TermColour.ANSI)
+@
 \section{GLR Engine}
 
 A design point: \cite{GLR} uses more globals than I do. My criterion here is
@@ -12,7 +15,7 @@ argument lists would therefore only clutter them.
 
 Description of the various lists in play here:
 
-\subsection{[[active_parsers]]}
+\subsection{[[activeParsers]]}
 
 The active parsers are at the frontier of the parse tree space.  It
 \textit{never} contains more than one stack node with a given parse state; I
@@ -21,12 +24,12 @@ with the same state as an existing node, we merge them. If it's a shift, we add
 another [[leftAdjState]]; if it's a reduction, we add a rule node
 \textit{and} another [[leftAdjState]].
 
-Before a token is processed, [[active_parsers]] contains those parsers that
+Before a token is processed, [[activeParsers]] contains those parsers that
 successfully shifted the previous token.  This list is then walked to make the
 initial reduction work-list.
 
-Before the shifts are processed, the [[active_parsers]] list is cleared.  As
-each shift is processed, the resulting parser is added to [[active_parsers]]
+Before the shifts are processed, the [[activeParsers]] list is cleared.  As
+each shift is processed, the resulting parser is added to [[activeParsers]]
 (modulo USP).
 
 \subsection{Path re-examination}
@@ -92,12 +95,7 @@ Relative to C++ implementation, what is not done:
   \item Heavy testing of the mini-LR core
 \end{itemize}
 
-<<ml>>=
-
-module Colour = TermColour.Make(TermColour.ANSI)
-
-@
-We define our own versions of this exception, so that user code raising
+We define our own version of this exception, so that user code raising
 the ones in [[Pervasives]] will not interfere with parser internals.
 <<ml>>=
 exception End_of_file
@@ -115,9 +113,7 @@ let keep_cancel () =
 \subsection{GLR engine types}
 
 \subsubsection{Accounting statistics}
-<<ml>>=
 
-@
 Private mutable statistics.
 <<ml>>=
 type statistics = {
@@ -267,11 +263,11 @@ type 'result glr = {
 @
   Set of topmost parser nodes.
 <<ml>>=
-  active_parsers		: stack_node Arraystack.t;
+  activeParsers		: stack_node Arraystack.t;
 @
-  Swapped with [[active_parsers]] periodically, for performance reasons.
+  Swapped with [[activeParsers]] periodically, for performance reasons.
 <<ml>>=
-  prev_active			: stack_node Arraystack.t;
+  prevActive			: stack_node Arraystack.t;
 @
   Node allocation pool; shared with [[GLR.parseToken]].
 <<ml>>=
@@ -552,7 +548,7 @@ module StackNode : sig
     : t
     -> SiblingLink.t
 
-  val addFirstSiblingLink_no_refcnt
+  val addFirstSiblingLink_noRefCnt
     : t
     -> t
     -> SemanticValue.t
@@ -688,7 +684,7 @@ end = struct
 @
   Add the very first sibling.
 <<ml>>=
-  let addFirstSiblingLink_no_refcnt node leftSib sval start_p end_p =
+  let addFirstSiblingLink_noRefCnt node leftSib sval start_p end_p =
     assert (hasZeroSiblings node);
 @
     My depth will be my new sibling's depth, plus 1.
@@ -736,7 +732,7 @@ end = struct
 <<ml>>=
   let addSiblingLink node leftSib sval start_p end_p =
     if hasZeroSiblings node then (
-      addFirstSiblingLink_no_refcnt node leftSib sval start_p end_p;
+      addFirstSiblingLink_noRefCnt node leftSib sval start_p end_p;
 @
       Manually increment [[leftSib]]'s reference count.
 <<ml>>=
@@ -841,65 +837,6 @@ end = struct
 
   (* stackTraceString *)
 
-  let create glr ssi pi rhsLen =
-    let p = Objpool.alloc glr.pathPool in
-    p.startStateId <- ssi;
-    p.prodIndex <- pi;
-    p.rhsLen <- rhsLen;
-    p
-
-
-  let delete glr p =
-    Objpool.dealloc glr.pathPool p
-
-
-@
-  Ensure the arrays have at least the given index.
-<<ml>>=
-  let ensureRhsLen p rhsLen =
-    Array.length p.sibLinks >= rhsLen &&
-    Array.length p.symbols  >= rhsLen
-
-
-  let compare_path glr p1 p2 =
-    if p1.startColumn > p2.startColumn then (
-@
-      [[p1]] spans fewer tokens, so it goes first.
-<<ml>>=
-      -1
-    ) else if p2.startColumn > p1.startColumn then (
-@
-      Same logic.
-<<ml>>=
-      1
-    ) else (
-@
-      Equal start columns, compare nonterm ids.
-<<ml>>=
-      let p1NtIndex = ParseTables.getProdInfo_lhsIndex glr.tables p1.prodIndex in
-      let p2NtIndex = ParseTables.getProdInfo_lhsIndex glr.tables p2.prodIndex in
-
-@
-      Check nonterm order.
-<<ml>>=
-      let ord1 = ParseTables.getNontermOrdinal glr.tables p1NtIndex in
-      let ord2 = ParseTables.getNontermOrdinal glr.tables p2NtIndex in
-
-      ord1 - ord2
-    )
-
-
-@
-  Find the link where we want to insert the path.
-<<ml>>=
-  let rec search_pos glr p prev =
-    match prev.next with
-    | Some next when compare_path glr p next >= 0 ->
-        search_pos glr p next
-    | _ ->
-        prev
-
-
   let length glr =
     let rec loop accu next =
       match next with
@@ -924,6 +861,62 @@ end = struct
       (String.concat "; " (show [] glr.top))
 
 
+  let create glr ssi pi rhsLen =
+    let p = Objpool.alloc glr.pathPool in
+    p.startStateId <- ssi;
+    p.prodIndex <- pi;
+    p.rhsLen <- rhsLen;
+    p
+
+
+  let delete glr p =
+    Objpool.dealloc glr.pathPool p
+
+
+@
+  Ensure the arrays have at least the given index.
+<<ml>>=
+  let ensureRhsLen p rhsLen =
+    Array.length p.sibLinks >= rhsLen &&
+    Array.length p.symbols  >= rhsLen
+
+
+  let compare_path tables p1 p2 =
+@
+    If one of the paths spans fewer tokens, it goes first.
+<<ml>>=
+    match compare p2.startColumn p1.startColumn with
+    | 0 ->
+@
+        Equal start columns, compare ids of nonterminals
+        to which we're reducing in each case.
+<<ml>>=
+        let p1NtIndex = ParseTables.getProdInfo_lhsIndex tables p1.prodIndex in
+        let p2NtIndex = ParseTables.getProdInfo_lhsIndex tables p2.prodIndex in
+
+@
+        Consult total order on nonterminals.
+<<ml>>=
+        let ord1 = ParseTables.getNontermOrdinal tables p1NtIndex in
+        let ord2 = ParseTables.getNontermOrdinal tables p2NtIndex in
+
+        compare ord1 ord2
+
+    | ord ->
+        ord
+
+
+@
+  Find the link where we want to insert the path.
+<<ml>>=
+  let rec search_pos tables p prev =
+    match prev.next with
+    | Some next when compare_path tables p next >= 0 ->
+        search_pos tables p next
+    | _ ->
+        prev
+
+
   let insert_copy glr src leftEdge =
     let rhsLen = src.rhsLen in
 
@@ -946,8 +939,6 @@ end = struct
       p.symbols .(i) <- src.symbols .(i);
     done;
 
-    let len = length glr in
-
 @
     Find proper place to insert new path.
 <<ml>>=
@@ -960,14 +951,14 @@ end = struct
         glr.top <- Some p;
 
     | Some top ->
-        if compare_path glr p top < 0 then (
+        if compare_path glr.tables p top < 0 then (
           p.next <- glr.top;
           glr.top <- Some p;
         ) else (
 @
           Search.
 <<ml>>=
-          let prev = search_pos glr p top in
+          let prev = search_pos glr.tables p top in
 
 @
           Insert.
@@ -975,9 +966,7 @@ end = struct
           p.next <- prev.next;
           prev.next <- Some p;
         )
-    end;
-
-    assert (length glr = len + 1)
+    end
 
 
   let dequeue glr =
@@ -1025,13 +1014,13 @@ end = struct
 
 
 @
-  Add a new parser to the [[active_parsers]] list, maintaining
+  Add a new parser to the [[activeParsers]] list, maintaining
   related invariants.
 <<ml>>=
   let addTopmostParser glr parsr =
     assert (StackNode.checkLocalInvariants parsr);
 
-    Arraystack.push parsr glr.active_parsers;
+    Arraystack.push parsr glr.activeParsers;
     StackNode.inc_refcnt parsr
 
 
@@ -1139,7 +1128,7 @@ end = struct
       Ambiguous; check for reductions in list of actions.
 <<ml>>=
       let firstEntry = ParseTables.decodeAmbigAction glr.tables action parsr.state in
-      let numEntries = (ParseTables.getAmbigEntry glr.tables firstEntry :> int) in
+      let numEntries = ParseTables.getAmbigEntry glr.tables firstEntry in
 
       for i = 1 to numEntries do
         let entry = ParseTables.getAmbigEntry glr.tables (firstEntry + i) in
@@ -1157,7 +1146,7 @@ end = struct
 @
     Always using the \textit{not} [[USE_PARSER_INDEX]] case.
 <<ml>>=
-    Arraystack.find (fun n -> n.state = state) glr.active_parsers
+    Arraystack.find (fun n -> n.state = state) glr.activeParsers
 
 
   let canMakeProgress glr tokType parsr =
@@ -1240,7 +1229,7 @@ end = struct
                 changes := true;
                 parsr.determinDepth <- newDepth;
               )
-            ) glr.active_parsers;
+            ) glr.activeParsers;
             incr iters;
 @
             Protect against infinite loop.
@@ -1288,11 +1277,11 @@ end = struct
 
     if Options._trace_parse () then
       Printf.printf "state %d, %s nonterm %d (%s), to state %d\n"
-        (leftSibling.state :> int)
+        leftSibling.state
         (Colour.cyan "shift")
-        (lhsIndex :> int)
+        lhsIndex
         (User.nonterminalName glr.userAct lhsIndex)
-        (rightSiblingState :> int);
+        rightSiblingState;
 @
     Is there already an active parser with this state?
 <<ml>>=
@@ -1314,11 +1303,11 @@ end = struct
     if Options._trace_parse () then
       Printf.printf "state %d, %s by production %d (rhsLen=%d), \
                      back to state %d\n"
-        (path.startStateId :> int)
+        path.startStateId
         (Colour.cyan "reduce")
         path.prodIndex
         rhsLen
-        (path.leftEdgeNode.state :> int);
+        path.leftEdgeNode.state;
 
     if Options._accounting () then
       glr.stats.nondetReduce <- glr.stats.nondetReduce + 1;
@@ -1385,7 +1374,7 @@ end = struct
               parsr.state tokType
           in
           ignore (enqueueReductions glr parsr action newLink)
-        ) glr.active_parsers
+        ) glr.activeParsers
 
     with UserActions.Cancel reason ->
 @
@@ -1436,7 +1425,7 @@ end = struct
       Nondeterministic.
 <<ml>>=
       let firstEntry = ParseTables.decodeAmbigAction tables action state in
-      let numEntries = (ParseTables.getAmbigEntry tables firstEntry :> int) in
+      let numEntries = ParseTables.getAmbigEntry tables firstEntry in
 
       let newState = ref ParseTables.invalid_state in
       let i = ref 1 in
@@ -1461,11 +1450,11 @@ end = struct
   let shiftTerminals glr tokType tokSval tokSloc =
     glr.globalNodeColumn <- glr.globalNodeColumn + 1;
 @
-    Move all parsers from [[active_parsers]] to [[prev_active]].
+    Move all parsers from [[activeParsers]] to [[prevActive]].
 <<ml>>=
-    assert (Arraystack.is_empty glr.prev_active);
-    Arraystack.swap glr.prev_active glr.active_parsers;
-    assert (Arraystack.is_empty glr.active_parsers);
+    assert (Arraystack.is_empty glr.prevActive);
+    Arraystack.swap glr.prevActive glr.activeParsers;
+    assert (Arraystack.is_empty glr.activeParsers);
 @
     For token multi-yield.
 <<ml>>=
@@ -1473,8 +1462,8 @@ end = struct
 
     Arraystack.iter (fun leftSibling ->
 @
-      Take the node from [[prev_active]]; the refcount transfers
-      from [[prev_active]] to (local variable) [[leftSibling]].
+      Take the node from [[prevActive]]; the refcount transfers
+      from [[prevActive]] to (local variable) [[leftSibling]].
 <<ml>>=
       assert (leftSibling.referenceCount >= 1);   (* for the local *)
       let state = leftSibling.state in
@@ -1497,10 +1486,10 @@ end = struct
 
         if Options._trace_parse () then
           Printf.printf "state %d, %s token %s, to state %d\n"
-            (state :> int)
+            state
             (Colour.cyan "shift")
             (User.terminalName glr.userAct tokType)
-            (newState :> int);
+            newState;
 @
         Already a parser in this state?
 <<ml>>=
@@ -1557,7 +1546,7 @@ end = struct
         or added-to during shifting do not have anything pointing at
         them, so in particular nothing points to [[rightSibling]]; a simple
         check of this is to check the reference count and verify it is 1,
-        the 1 being for the [[active_parsers]] list it is on.
+        the 1 being for the [[activeParsers]] list it is on.
 <<ml>>=
         assert (rightSibling.referenceCount = 1);
       );
@@ -1565,9 +1554,9 @@ end = struct
       Pending decrement of [[leftSibling]], which is about to go out of scope.
 <<ml>>=
       StackNode.dec_refcnt glr leftSibling;
-    ) glr.prev_active;
+    ) glr.prevActive;
 
-    Arraystack.clear glr.prev_active
+    Arraystack.clear glr.prevActive
 
 end
 
@@ -1590,13 +1579,12 @@ let parse_error ?reason glr tokType tokSloc lastToDie =
   if Options._error_verbose () then (
     if lastToDie <> ParseTables.invalid_state then (
       Printf.printf "In state %d, I expected one of these tokens:\n"
-        (lastToDie :> int);
+        lastToDie;
       ParseTables.iter_terms glr.tables (fun i ->
         let act = ParseTables.getActionEntry glr.tables lastToDie i in
         if not (ParseTables.isErrorAction glr.tables act) then
           Printf.printf "  [%d] %s\n"
-            (i :> int)
-            (User.terminalName glr.userAct i);
+            i (User.terminalName glr.userAct i);
       )
     ) else (
       Printf.printf "(expected-token info not available due \
@@ -1604,7 +1592,7 @@ let parse_error ?reason glr tokType tokSloc lastToDie =
     );
 
     Printf.printf (*loc*) "Parse error (state %d) at %s\n"
-      (lastToDie :> int)
+      lastToDie
       (User.terminalName glr.userAct tokType);
     match reason with
     | None -> ()
@@ -1635,10 +1623,10 @@ module GLR : ParserCore = struct
       if actions = 0 then (
         if Options._trace_parse () then
           Printf.printf "parser in state %d died\n"
-            (parsr.state :> int);
+            parsr.state;
         lastToDie := parsr.state
       )
-    ) glr.active_parsers;
+    ) glr.activeParsers;
 @
     Drop into worklist processing loop.
 <<ml>>=
@@ -1650,7 +1638,7 @@ module GLR : ParserCore = struct
 @
     Error?
 <<ml>>=
-    if Arraystack.is_empty glr.active_parsers then
+    if Arraystack.is_empty glr.activeParsers then
       parse_error glr tokType tokSloc !lastToDie
 @
   Pulled out so I can use this block of statements in several places.
@@ -1678,7 +1666,7 @@ end
 module LR : ParserCore = struct
 
   let rec parseToken glr tokType tokSval tokSloc =
-    let parsr = ref (Arraystack.top glr.active_parsers) in
+    let parsr = ref (Arraystack.top glr.activeParsers) in
     assert (!parsr.referenceCount = 1);
 
     let action =
@@ -1769,12 +1757,12 @@ module LR : ParserCore = struct
         if Options._trace_parse () then
           Printf.printf "state %d, (unambig) %s by %d (len=%d), \
                          back to %d then out to %d\n"
-            (startStateId :> int)
+            startStateId
             (Colour.cyan "reduce")
             prodIndex
             rhsLen
-            (!parsr.state :> int)
-            (newState :> int);
+            !parsr.state
+            newState;
 @
         Call the user's action function (TREEBUILD).
 <<ml>>=
@@ -1807,15 +1795,15 @@ module LR : ParserCore = struct
 <<ml>>=
         let newNode = StackNode.make glr newState in
 
-        StackNode.addFirstSiblingLink_no_refcnt newNode !parsr sval
+        StackNode.addFirstSiblingLink_noRefCnt newNode !parsr sval
           !leftEdge !rightEdge;
 
         assert (!parsr.referenceCount = 1);
 @
         Replace old topmost parser with [[newNode]].
 <<ml>>=
-        assert (Arraystack.length glr.active_parsers = 1);
-        Arraystack.set glr.active_parsers 0 newNode;
+        assert (Arraystack.length glr.activeParsers = 1);
+        Arraystack.set glr.activeParsers 0 newNode;
         StackNode.inc_refcnt newNode;
         assert (newNode.referenceCount = 1);
 @
@@ -1840,22 +1828,22 @@ module LR : ParserCore = struct
 
       if Options._trace_parse () then
         Printf.printf "state %d, (unambig) %s token %d, to state %d\n"
-          (!parsr.state :> int)
+          !parsr.state
           (Colour.cyan "shift")
-          (tokType :> int)
-          (newState :> int);
+          tokType
+          newState;
 
       glr.globalNodeColumn <- glr.globalNodeColumn + 1;
 
       let rightSibling = StackNode.make glr newState in
 
-      StackNode.addFirstSiblingLink_no_refcnt rightSibling !parsr
+      StackNode.addFirstSiblingLink_noRefCnt rightSibling !parsr
         tokSval (fst tokSloc) (snd tokSloc);
 @
       Replace [[parsr]] with [[rightSibling]].
 <<ml>>=
-      assert (Arraystack.length glr.active_parsers = 1);
-      Arraystack.set glr.active_parsers 0 rightSibling;
+      assert (Arraystack.length glr.activeParsers = 1);
+      Arraystack.set glr.activeParsers 0 rightSibling;
 
       assert (!parsr.referenceCount = 1);
       assert (rightSibling.referenceCount = 0);
@@ -1881,7 +1869,7 @@ end
 <<ml>>=
 
 let nodeSummary node =
-  Printf.sprintf "%d[%d]" (node.state :> int) node.referenceCount
+  Printf.sprintf "%d[%d]" node.state node.referenceCount
 
 
 let rec innerStackSummary printed node =
@@ -1940,7 +1928,7 @@ let stackSummary glr =
 @
   Loop/fold.
 <<ml>>=
-  let len = Arraystack.length glr.active_parsers in
+  let len = Arraystack.length glr.activeParsers in
   let rec loop acc i =
     if i > len - 1 then
 @
@@ -1948,7 +1936,7 @@ let stackSummary glr =
 <<ml>>=
       acc
     else
-      let n = Arraystack.nth glr.active_parsers i in
+      let n = Arraystack.nth glr.activeParsers i in
       let summary =
         Printf.sprintf "%s (%d: %s)"
           acc i (innerStackSummary printed n)
@@ -1976,7 +1964,7 @@ let rec main_loop (glr : 'result glr) lexer lexbuf token : 'result =
     Printf.printf "---- processing token %s%s, %d active parsers ----\n"
       (User.terminalName glr.userAct tokType)
       (Id.get tokSval)
-      (Arraystack.length glr.active_parsers);
+      (Arraystack.length glr.activeParsers);
     Printf.printf "Stack:%s\n" (stackSummary glr);
   );
 @
@@ -1987,7 +1975,7 @@ let rec main_loop (glr : 'result glr) lexer lexbuf token : 'result =
   in
 
   begin try
-    if Options._use_mini_lr () && Arraystack.length glr.active_parsers = 1 then
+    if Options._use_mini_lr () && Arraystack.length glr.activeParsers = 1 then
 @
       Try deterministic parsing.
 <<ml>>=
@@ -2035,15 +2023,15 @@ let cleanupAfterParse (glr : 'result glr) : 'result =
   if Options._trace_parse () then
     Printf.printf "==== parse succeeded ====\n";
 
-  if not (Arraystack.length glr.active_parsers = 1) then (
+  if not (Arraystack.length glr.activeParsers = 1) then (
     Printf.printf "parsing finished with %d active parsers!\n"
-      (Arraystack.length glr.active_parsers);
+      (Arraystack.length glr.activeParsers);
     raise (ParseError (
       ParseTables.invalid_state,
       ParseTables.invalid_term
     ))
   ) else (
-    let last = Arraystack.top glr.active_parsers in
+    let last = Arraystack.top glr.activeParsers in
 @
     Prepare to run final action.
 <<ml>>=
@@ -2078,7 +2066,7 @@ let cleanupAfterParse (glr : 'result glr) : 'result =
 @
     Before pool goes away..
 <<ml>>=
-    Arraystack.iter (StackNode.dec_refcnt glr) glr.active_parsers;
+    Arraystack.iter (StackNode.dec_refcnt glr) glr.activeParsers;
 
     treeTop
   )
@@ -2138,8 +2126,8 @@ let create userAct tables =
     top                 = None;
     toPass              = Array.make maxRhsLen SemanticValue.null;
     pathPool		= Objpool.make (makePath maxRhsLen);
-    active_parsers      = Arraystack.create ();
-    prev_active         = Arraystack.create ();
+    activeParsers       = Arraystack.create ();
+    prevActive          = Arraystack.create ();
     stackNodePool       = Objpool.make StackNode.create;
     globalNodeColumn    = 0;
     stats = {
