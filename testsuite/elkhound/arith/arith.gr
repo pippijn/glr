@@ -106,19 +106,22 @@ nonterm(int) Exp {
   -> e1:Exp "-" e2:Exp		[Sub] { e1 - e2 }
   -> e1:Exp "*" e2:Exp		[Mul] { e1 * e2 }
   -> e1:Exp "/" e2:Exp		[Div] { e1 / e2 }
-  -> n:TOK_NUMBER		[Int] { n }
-  -> p:ParenthesizedExp		[Exp] { p }
+  (* If no semantic action is provided, a tuple of bindings is
+   * returned. In this case, that is just 'n', but it could be
+   * '(e1, e2)' for the above rules. *)
+  -> n:TOK_NUMBER		[Int];
+  -> p:ParenthesizedExp		[Exp];
   -> "if" c:BooleanExp "then" e1:Exp "else" e2:Exp "end" [If] { if c then e1 else e2 }
 }
 
 nonterm(bool) BooleanExp {
-  -> e1:Exp "=" e2:Exp		[Eq]  { e1 = e2 }
-  -> e1:BooleanExp "||" e2:BooleanExp		[Or]  { e1 || e2 }
-  -> e1:BooleanExp "&&" e2:BooleanExp		[And]  { e1 && e2 }
+  -> e1:Exp "=" e2:Exp			[Eq]	{ e1 = e2 }
+  -> e1:BooleanExp "||" e2:BooleanExp	[Or]	{ e1 || e2 }
+  -> e1:BooleanExp "&&" e2:BooleanExp	[And]	{ e1 && e2 }
 }
 
 (* I've separated this rule out into its own nonterminal just to
  * show an example of having more than one nonterminal in a grammar. *)
 nonterm(int) ParenthesizedExp {
-  -> "(" e:Exp ")"		{ e }
+  -> "(" e:Exp ")";
 }

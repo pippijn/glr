@@ -26,5 +26,5 @@ nonterm(AmbigAst.t) Exp {
   -> e1:Exp "*" e2:Exp		[Mul] { Mul (e1, e2) }
   -> e1:Exp "/" e2:Exp		[Div] { Div (e1, e2) }
   -> n:TOK_NUMBER		[Num] { Num n }
-  -> "(" e:Exp ")"		[Exp] { e }
+  -> "(" e:Exp ")"		[Exp];
 }
