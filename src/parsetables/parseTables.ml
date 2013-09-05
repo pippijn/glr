@@ -151,5 +151,9 @@ let iter_terms tables f =
   done
 
 
-let fold_terms tables f x =
+let fold_left_terms tables f x =
   CoreInt.fold_left f x 0 (getNumTerms tables - 1)
+
+
+let fold_right_terms tables f x =
+  CoreInt.fold_right f 0 (getNumTerms tables - 1) x

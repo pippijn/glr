@@ -1586,7 +1586,7 @@ end
 let parse_error ?reason glr tokType tokSloc lastToDie =
   let expected =
     if lastToDie <> ParseTables.invalid_state then
-      ParseTables.fold_terms glr.tables (fun expected i ->
+      ParseTables.fold_right_terms glr.tables (fun i expected ->
         let act = ParseTables.getActionEntry glr.tables lastToDie i in
         if not (ParseTables.isErrorAction glr.tables act) then
           (i, User.terminalName glr.userAct i) :: expected
