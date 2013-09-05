@@ -1,5 +1,5 @@
 <<ml>>=
-module Colour = TermColour.Make(TermColour.ANSI)
+module Colour = TermColour.Make(TermColour.None)
 @
 \section{GLR Engine}
 
@@ -103,7 +103,15 @@ exception End_of_file
 @
 These Exceptions are part of the public interface.
 <<ml>>=
-exception ParseError of ParseTables.state_id * (*token*)ParseTables.term_index
+type expected =
+  (ParseTables.term_index * string) list
+
+exception ParseError of
+  (*state*)ParseTables.state_id *
+  (*token*)ParseTables.term_index *
+  expected *
+  (*cancel reason*)string option
+
 exception Located of SourceLocation.t * exn * string
 
 let keep_cancel () =
@@ -1576,16 +1584,26 @@ module type ParserCore = sig
 end
 
 let parse_error ?reason glr tokType tokSloc lastToDie =
-  if Options._error_verbose () then (
-    if lastToDie <> ParseTables.invalid_state then (
-      Printf.printf "In state %d, I expected one of these tokens:\n"
-        lastToDie;
-      ParseTables.iter_terms glr.tables (fun i ->
+  let expected =
+    if lastToDie <> ParseTables.invalid_state then
+      ParseTables.fold_terms glr.tables (fun expected i ->
         let act = ParseTables.getActionEntry glr.tables lastToDie i in
         if not (ParseTables.isErrorAction glr.tables act) then
-          Printf.printf "  [%d] %s\n"
-            i (User.terminalName glr.userAct i);
-      )
+          (i, User.terminalName glr.userAct i) :: expected
+        else
+          expected
+      ) []
+    else
+      []
+  in
+
+  if Options._error_verbose () then (
+    if expected != [] then (
+      Printf.printf "In state %d, I expected one of these tokens:\n"
+        lastToDie;
+      List.iter (fun (i, name) ->
+        Printf.printf "  [%d] %s\n" i name
+      ) expected
     ) else (
       Printf.printf "(expected-token info not available due \
                      to nondeterministic mode)\n"
@@ -1601,7 +1619,7 @@ let parse_error ?reason glr tokType tokSloc lastToDie =
   );
 
   raise (Located (tokSloc,
-    ParseError (lastToDie, tokType),
+    ParseError (lastToDie, tokType, expected, reason),
     User.terminalName glr.userAct tokType
   ))
 
@@ -2028,7 +2046,8 @@ let cleanupAfterParse (glr : 'result glr) : 'result =
       (Arraystack.length glr.activeParsers);
     raise (ParseError (
       ParseTables.invalid_state,
-      ParseTables.invalid_term
+      ParseTables.invalid_term,
+      [], None
     ))
   ) else (
     let last = Arraystack.top glr.activeParsers in

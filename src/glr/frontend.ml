@@ -57,7 +57,7 @@ module Make
 
         (* print exception info *)
         begin match e with
-        | Engine.ParseError (state, token) ->
+        | Engine.ParseError (state, token, expected, reason) ->
             Printf.printf "parse error near \"%s\" (state: %d, token: %d)\n"
               extra state token
         | Failure msg ->

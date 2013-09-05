@@ -149,3 +149,7 @@ let iter_terms tables f =
   for i = 0 to getNumTerms tables - 1 do
     f i
   done
+
+
+let fold_terms tables f x =
+  CoreInt.fold_left f x 0 (getNumTerms tables - 1)

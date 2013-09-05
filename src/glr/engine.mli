@@ -1,4 +1,12 @@
-exception ParseError of ParseTables.state_id * ParseTables.term_index
+type expected =
+  (ParseTables.term_index * string) list
+
+exception ParseError of
+  (*state*)ParseTables.state_id *
+  (*token*)ParseTables.term_index *
+  expected *
+  (*cancel reason*)string option
+
 exception Located of SourceLocation.t * exn * string
 
 type stats = {
