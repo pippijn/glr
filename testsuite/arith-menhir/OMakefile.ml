@@ -17,5 +17,5 @@ install Program ".DEFAULT" [
     "menhirLib";
   ];
 
-  Code "MENHIR_FLAGS += -t";
+  (*Code "MENHIR_FLAGS += -t";*)
 ]
