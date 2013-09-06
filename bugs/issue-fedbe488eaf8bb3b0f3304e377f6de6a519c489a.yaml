@@ -1,5 +1,5 @@
 --- !ditz.rubyforge.org,2008-03-06/issue 
-title: Move elkhound's -module-prefix into the grammar file
+title: Move glrgen's -module-prefix into the grammar file
 desc: |-
   All options that affect the generated parser should live inside the grammar
   description. Currently, the module prefix ("Cc" for the C++ parser) is

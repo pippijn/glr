@@ -1,5 +1,5 @@
 --- !ditz.rubyforge.org,2008-03-06/issue 
-title: Integrate treematch with elkhound
+title: Integrate treematch with glrgen
 desc: |-
   Elkhound (gramanl) should produce a treematch AST instead of a Caml AST
   directly. Treematch will then emit the Ptree that is now produced by
