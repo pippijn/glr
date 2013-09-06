@@ -1,3 +1,17 @@
-recurse-into ($(filter-out %-dyp, $(glob D, *)))
+SUBDIRS[] =
+  ambig
+  arith
+  arith-bison
+  arith-menhir
+  cxxparser
+  eea
+  eea-bison
+  scannerless
+
+if $(has-prog $(DYPGEN)):
+  SUBDIRS += arith-dyp
+  export
+
+recurse-into ($(SUBDIRS))
 
 testsuite (glrgen)
