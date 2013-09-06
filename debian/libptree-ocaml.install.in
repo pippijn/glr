@@ -1,0 +1,3 @@
+@OCamlStdlibDir@/ptree/META
+@OCamlStdlibDir@/ptree/*.cma
+@OCamlStdlibDir@/ptree/*.cmxs

@@ -1,0 +1,10 @@
+# dont use camlp4.lib and camlp4.fulllib together'
+package "fulllib" (
+  requires = "camlp4 dynlink"
+  version = "[distributed with Ocaml]"
+  description = "Camlp4 library"
+  error(pkg_camlp4.lib) = "camlp4.lib and camlp4.fulllib are incompatible"
+  archive(byte) = "camlp4fulllib.cma"
+  archive(byte,toploop) = ""  # already contained in camlp4*.cma
+  archive(native) = "camlp4fulllib.cmxa"
+)

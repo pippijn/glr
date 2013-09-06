@@ -1,0 +1,3 @@
+@OCamlStdlibDir@/glr/META
+@OCamlStdlibDir@/glr/*.cma
+@OCamlStdlibDir@/glr/*.cmxs

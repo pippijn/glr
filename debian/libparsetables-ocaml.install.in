@@ -1,0 +1,3 @@
+@OCamlStdlibDir@/parsetables/META
+@OCamlStdlibDir@/parsetables/*.cma
+@OCamlStdlibDir@/parsetables/*.cmxs

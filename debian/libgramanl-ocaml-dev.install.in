@@ -1,0 +1,3 @@
+@OCamlStdlibDir@/gramanl/*.a
+@OCamlStdlibDir@/gramanl/*.cm[ix]
+@OCamlStdlibDir@/gramanl/*.cmxa

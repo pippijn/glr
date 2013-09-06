@@ -1,0 +1,3 @@
+@OCamlStdlibDir@/glr/*.a
+@OCamlStdlibDir@/glr/*.cm[ix]
+@OCamlStdlibDir@/glr/*.cmxa
