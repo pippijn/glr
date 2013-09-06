@@ -1,4 +1,4 @@
-(* example of scannerless operation in Elkhound *)
+(* example of scannerless operation in Glr *)
 
 terminals {
     0: CHAR_EOF;

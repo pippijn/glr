@@ -1,1 +1,1 @@
-recurse-into ($(glob D, *))
+recurse-into ($(filter-out %-dyp, $(glob D, *)))

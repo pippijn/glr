@@ -20,5 +20,5 @@ install Program ".DEFAULT" [
     "ambigAst.ml",	"-syntax camlp4o";
   ];
 
-  Parser (Elkhound, "ambig");
+  Parser (Glr, "ambig");
 ]

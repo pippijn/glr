@@ -15,5 +15,5 @@ install Program ".DEFAULT" [
     "glr";
   ];
 
-  Parser (Elkhound, "cc");
+  Parser (Glr, "cc");
 ]

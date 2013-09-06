@@ -7,21 +7,21 @@ TestFramework.(run "testsuite" [
     tool = "arith.native";
     suffixes = [".c"];
     dirs = [
-      "elkhound/arith/tests";
+      "arith/tests";
     ];
   };
   { empty with
     tool = "sless.native";
     suffixes = [".c"];
     dirs = [
-      "elkhound/scannerless/tests";
+      "scannerless/tests";
     ];
   };
   { empty with
     tool = "cxxparser.native";
     suffixes = [".cc"];
     dirs = [
-      "elkhound/cxxparser/tests";
+      "cxxparser/tests";
     ];
   };
 ])

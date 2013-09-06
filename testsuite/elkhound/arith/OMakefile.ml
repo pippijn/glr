@@ -15,5 +15,5 @@ install Program ".DEFAULT" [
     "glr";
   ];
 
-  Parser (Elkhound, "arith");
+  Parser (Glr, "arith");
 ]
