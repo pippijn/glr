@@ -4,7 +4,7 @@ script: dpkg-buildpackage -b -us -uc
 install:
    - sudo apt-add-repository -y ppa:pippijn/ppa
    - sudo apt-get update
-   - sudo apt-get install omake noweb valgrind dh-ocaml camlp4-extra menhir libbatteries-ocaml-dev libsexplib-camlp4-dev libderiving-ocsigen-ocaml-dev
+   - sudo apt-get install omake noweb valgrind dh-ocaml camlp4-extra menhir libmenhir-ocaml-dev libocamlgraph-ocaml-dev libbatteries-ocaml-dev libsexplib-camlp4-dev libderiving-ocsigen-ocaml-dev
    - wget https://raw.github.com/pippijn/obuild/master/script/travis-depend?$(date +%s) -O travis-depend
    - sudo sh -c 'cat debian/camlp4-meta.patch >> /usr/lib/ocaml/METAS/META.camlp4'
    - chmod +x travis-depend
