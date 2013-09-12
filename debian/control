@@ -6,9 +6,12 @@ Uploaders:
   Pippijn van Steenhoven <pip88nl@gmail.com>
 Build-Depends:
   obuild,
+  rubber,
   ocaml-nox (>= 3.12),
   ocaml-findlib,
   libbaselib-ocaml-dev,
+  libmenhir-ocaml-dev,
+  libocamlgraph-ocaml-dev,
   libsexplib-camlp4-dev,
   dh-ocaml,
   debhelper (>= 8.0.0)
