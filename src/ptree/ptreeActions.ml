@@ -1,8 +1,8 @@
 (* given actions for a grammar, wrap them with actions that
  * just build a parse tree (forest) *)
 
-let inject  : PtreeNode.t -> SemanticValue.t = Obj.magic
-let project : SemanticValue.t -> PtreeNode.t = Obj.magic
+let inject  : PtreeNode.t -> SemanticValue.t = SemanticValue.repr
+let project : SemanticValue.t -> PtreeNode.t = SemanticValue.obj
 
 
 
