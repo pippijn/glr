@@ -1,0 +1,16 @@
+Name = eea-bison
+
+C-Sources[] =
+  eea.c
+  eeaLexer.l
+  eeaParser.y
+
+C-Headers[] =
+  eea.h
+  eeaParser.h
+
+OM_CFLAGS = -O2
+OM_YFLAGS = -d
+
+TARGET = $(program-install)
+.DEFAULT: $(TARGET)

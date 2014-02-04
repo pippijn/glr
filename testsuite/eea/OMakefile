@@ -1,0 +1,15 @@
+Name		= eea
+Description	= Highly ambiguous parser E -> E E | a
+Version		= 0.1
+
+OCaml-Sources[] =
+  Eea
+  EeaLexer
+
+OCaml-Requires[] =
+  glr
+
+glrgen-parser (eea)
+
+TARGET = $(program-install)
+.DEFAULT: $(TARGET)

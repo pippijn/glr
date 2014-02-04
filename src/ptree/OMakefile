@@ -1,0 +1,16 @@
+Name		= ptree
+Description	= Untyped parse tree actions
+Version		= 0.1
+
+# Sources
+OCaml-Sources[] =
+  PtreeActions
+  PtreeNode
+  PtreeOptions
+
+# Library dependencies
+OCaml-Requires[] =
+  parsetables
+
+TARGET = $(library-install)
+.DEFAULT: $(TARGET)

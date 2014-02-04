@@ -1,0 +1,13 @@
+Name = arith
+
+OCaml-Sources[] =
+  Arith
+  ArithLexer
+
+OCaml-Requires[] =
+  glr
+
+glrgen-parser (arith)
+
+TARGET = $(program-install)
+.DEFAULT: $(TARGET)

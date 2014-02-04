@@ -1,0 +1,17 @@
+Name		= arith-menhir
+Description	= Arith parser built with Menhir
+Version		= 0.1
+
+OCaml-Sources[] =
+  Arith
+  ArithLexer
+  ArithParser
+
+OCaml-Requires[] =
+  corelib
+  menhirLib
+
+#MENHIR_FLAGS += -t
+
+TARGET = $(program-install)
+.DEFAULT: $(TARGET)

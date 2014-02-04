@@ -1,0 +1,10 @@
+Name = glrgen
+
+OCaml-Sources[] =
+  Glrgen
+
+OCaml-Requires[] =
+  gramanl
+
+TARGET = $(program-install)
+.DEFAULT: $(TARGET)

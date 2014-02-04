@@ -1,0 +1,23 @@
+# Target
+Name		= parsetables
+Description	= Common modules for parser generator and engine
+Version		= 0.1
+
+# Sources
+OCaml-Sources[] =
+  ActionOptions
+  Lexerint
+  Liststack
+  ParseTables
+  ParseTablesType
+  SemanticValue
+  SourceLocation
+  TokenInfo
+  UserActions
+
+# Library dependencies
+OCaml-Requires[] =
+  corelib
+
+TARGET = $(library-install)
+.DEFAULT: $(TARGET)

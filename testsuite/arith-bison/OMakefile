@@ -1,0 +1,18 @@
+Name		= arith-bison
+Description	= Arith parser built with Bison
+Version		= 0.1
+
+C-Sources[] =
+  arith.c
+  arithLexer.l
+  arithParser.y
+
+C-Headers[] =
+  arith.h
+  arithParser.h
+
+OM_CFLAGS = -O2
+OM_YFLAGS = -d
+
+TARGET = $(program-install)
+.DEFAULT: $(TARGET)

@@ -1,0 +1,13 @@
+Name = sless
+
+OCaml-Sources[] =
+  Sless
+  SlessLexer
+
+OCaml-Requires[] =
+  glr
+
+glrgen-parser (sless)
+
+TARGET = $(program-install)
+.DEFAULT: $(TARGET)

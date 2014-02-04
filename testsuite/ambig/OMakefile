@@ -1,0 +1,17 @@
+Name = ambig
+
+OCaml-Sources[] =
+  Ambig
+  AmbigAst
+  AmbigLexer
+
+OCaml-Requires[] =
+  glr
+
+Flags. +=
+  $|ambigAst.ml|	= -syntax camlp4o
+
+glrgen-parser (ambig)
+
+TARGET = $(program-install)
+.DEFAULT: $(TARGET)

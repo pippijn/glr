@@ -1,10 +1,10 @@
-recurse-into ($(glob D, *))
+recurse ()
 
 # Target
 Name		= glr
 
 # Sub-documents
-Parts[] =
+LaTeX-Sources[] =
   glr/engine.ml
 
 Bibliography[] =

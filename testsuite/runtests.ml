@@ -11,6 +11,13 @@ TestFramework.(run "testsuite" [
     ];
   };
   { empty with
+    tool = "eea.native";
+    suffixes = [".c"];
+    dirs = [
+      "eea/tests";
+    ];
+  };
+  { empty with
     tool = "sless.native";
     suffixes = [".c"];
     dirs = [

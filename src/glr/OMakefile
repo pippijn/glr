@@ -1,0 +1,20 @@
+Name		= glr
+Description	= Generalised LR parsing engine
+Version		= 0.1
+
+OCaml-Sources[] =
+  Arraystack
+  Engine
+  Frontend
+  FrontendOptions
+  Lrparse
+  Objpool
+  Options
+
+OCaml-Requires[] =
+  corelib
+  parsetables
+  ptree
+
+TARGET = $(ocaml-pack-install)
+.DEFAULT: $(TARGET)

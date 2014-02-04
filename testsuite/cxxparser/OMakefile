@@ -1,0 +1,13 @@
+Name = cxxparser
+
+OCaml-Sources[] =
+  Cc
+  CcLexer
+
+OCaml-Requires[] =
+  glr
+
+glrgen-parser (cc)
+
+TARGET = $(program-install)
+.DEFAULT: $(TARGET)

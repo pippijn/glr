@@ -1,0 +1,13 @@
+Name = arith-dyp
+
+OCaml-Sources[] =
+  Arith
+  ArithLexer
+  ArithParser
+
+OCaml-Requires[] =
+  corelib
+  dyp
+
+TARGET = $(program-install)
+.DEFAULT: $(TARGET)
