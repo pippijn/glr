@@ -1,4 +1,4 @@
-Name = ambig
+Name		= ambig
 
 OCaml-Sources[] =
   Ambig

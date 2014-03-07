@@ -1,6 +1,4 @@
 Name		= eea
-Description	= Highly ambiguous parser E -> E E | a
-Version		= 0.1
 
 OCaml-Sources[] =
   Eea

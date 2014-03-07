@@ -1,4 +1,4 @@
-Name = glrgen
+Name		= glrgen
 
 OCaml-Sources[] =
   Glrgen

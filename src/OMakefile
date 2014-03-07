@@ -1,5 +1,3 @@
-recurse ()
-
 # Target
 Name		= glr
 
@@ -12,3 +10,5 @@ Bibliography[] =
 
 TARGET = $(latex-document)
 .DEFAULT: $(TARGET)
+
+recurse ()

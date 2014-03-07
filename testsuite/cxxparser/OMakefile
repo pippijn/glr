@@ -1,4 +1,4 @@
-Name = cxxparser
+Name		= cxxparser
 
 OCaml-Sources[] =
   Cc

@@ -1,4 +1,4 @@
-Name = arith-dyp
+Name		= arith-dyp
 
 OCaml-Sources[] =
   Arith

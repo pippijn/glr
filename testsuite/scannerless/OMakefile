@@ -1,4 +1,4 @@
-Name = sless
+Name		= sless
 
 OCaml-Sources[] =
   Sless

@@ -1,4 +1,4 @@
-Name = eea-bison
+Name		= eea-bison
 
 C-Sources[] =
   eea.c

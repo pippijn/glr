@@ -1,6 +1,4 @@
 Name		= arith-menhir
-Description	= Arith parser built with Menhir
-Version		= 0.1
 
 OCaml-Sources[] =
   Arith

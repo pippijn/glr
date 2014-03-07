@@ -1,6 +1,4 @@
 Name		= arith-bison
-Description	= Arith parser built with Bison
-Version		= 0.1
 
 C-Sources[] =
   arith.c
