@@ -6,9 +6,14 @@ Uploaders:
   Pippijn van Steenhoven <pip88nl@gmail.com>
 Build-Depends:
   obuild,
+  menhir,
+  noweb,
+  re2ml,
   rubber,
+  treematch,
   ocaml-nox (>= 3.12),
   ocaml-findlib,
+  camlp4-extra,
   libbaselib-ocaml-dev,
   libcodegen-ocaml-dev,
   libmenhir-ocaml-dev,
