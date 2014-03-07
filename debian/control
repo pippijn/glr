@@ -10,6 +10,7 @@ Build-Depends:
   ocaml-nox (>= 3.12),
   ocaml-findlib,
   libbaselib-ocaml-dev,
+  libcodegen-ocaml-dev,
   libmenhir-ocaml-dev,
   libocamlgraph-ocaml-dev,
   libsexplib-camlp4-dev,
