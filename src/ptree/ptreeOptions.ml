@@ -1,5 +1,5 @@
 (* turn this on to detect cyclicity; there is a performance penalty *)
-let _ptree_cycles	= ref true
+let _ptree_cycles	= ref false
 let _ptree_indent	= ref 1
 
 

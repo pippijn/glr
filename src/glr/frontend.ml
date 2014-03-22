@@ -259,7 +259,7 @@ module Make
           | file, None -> ()
           | file, Some tree ->
               print_endline "---- result ----";
-              print_string (PtreeNode.to_string tree true)
+              PtreeNode.print_tree Format.std_formatter tree true
         ) trees
     );
       

@@ -31,8 +31,8 @@ let make sym child_count child_fun = {
 
 
 let indent out n =
-  for i = 0 to n - 1 do
-    Buffer.add_char out ' '
+  for i = 0 to min (n - 1) 120 do
+    Format.pp_print_char out ' '
   done
 
 
@@ -60,7 +60,7 @@ let cyclic_skip self indentation out path =
     if idx >= 0 then (
       (* yes; print a cyclicity reference *)
       indent out indentation;
-      Printf.bprintf out "[CYCLIC: refers to %d hops up]\n"
+      Format.fprintf out "[CYCLIC: refers to %d hops up]\n"
         (Liststack.length path - idx + 1);
       true   (* return *)
     ) else (
@@ -94,29 +94,29 @@ let print_merged self indentation symbol =
 let print_alt self indentation out expand alts lhs ct node =
   if alts > 1 then (
     indent out (indentation - PtreeOptions._ptree_indent ());
-    Printf.bprintf out "------------- ambiguous %s: %d of %d ------------\n"
+    Format.fprintf out "------------- ambiguous %s: %d of %d ------------\n"
       lhs ct alts
   );
 
   indent out indentation;
 
-  Buffer.add_string out node.symbol;
+  Format.pp_print_string out node.symbol;
 
   if expand then (
     (* symbol is just LHS, write out RHS names after "->" *)
     if node.children <> [] then (
-      Buffer.add_string out " ->";
+      Format.pp_print_string out " ->";
       List.iter (fun c ->
-        Buffer.add_char out ' ';
-        Buffer.add_string out c.symbol;
+        Format.pp_print_char out ' ';
+        Format.pp_print_string out c.symbol;
       ) node.children
     )
   );
 
-  Buffer.add_char out '\n'
+  Format.pp_print_char out '\n'
 
 
-let print_tree self out expand =
+let print_tree out self expand =
   (* for detecting cyclicity *)
   let path = Liststack.create () in
 
@@ -145,7 +145,7 @@ let print_tree self out expand =
       if alts > 1 then (
         (* close up ambiguity display *)
         indent out (indentation - PtreeOptions._ptree_indent ());
-        Printf.bprintf out "----------- end of ambiguous %s -----------\n" lhs
+        Format.fprintf out "----------- end of ambiguous %s -----------\n" lhs
       );
 
       if PtreeOptions._ptree_cycles () then
@@ -159,5 +159,5 @@ let print_tree self out expand =
 
 let to_string self expand =
   let buf = Buffer.create 128 in
-  print_tree self buf expand;
+  print_tree (Format.formatter_of_buffer buf) self expand;
   Buffer.contents buf
